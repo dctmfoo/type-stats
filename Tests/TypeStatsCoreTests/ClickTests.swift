@@ -147,7 +147,7 @@ final class WindowHitTestTests: XCTestCase {
 
 /// The schema task 01 shipped (keys only), as the owner's store was written.
 enum TaskOneSchema: VersionedSchema {
-    static let versionIdentifier = Schema.Version(1, 0, 0)
+    static var versionIdentifier: Schema.Version { Schema.Version(1, 0, 0) }
     static var models: [any PersistentModel.Type] { [AppDayCount.self] }
 
     @Model

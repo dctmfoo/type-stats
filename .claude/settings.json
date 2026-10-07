@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(sh .po/check.sh)",
+      "Bash(swift build:*)",
+      "Bash(swift test:*)",
+      "Bash(sh scripts/bundle-app.sh:*)",
+      "Bash(sh scripts/app-smoke.sh:*)",
+      "Bash(open .build/TypeStats.app:*)",
+      "Bash(open -n .build/TypeStats.app:*)",
+      "Bash(screencapture:*)"
+    ],
+    "deny": [
+      "Bash(git push:*)"
+    ]
+  },
+  "autoMemoryEnabled": false
+}

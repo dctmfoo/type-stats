@@ -1,0 +1,12 @@
+.po/proof.json
+.po/tmp/
+.build/
+.swiftpm/
+*.xcuserstate
+xcuserdata/
+.DS_Store
+dist/
+.claude/settings.local.json
+*.p12
+*.cer
+*.mobileprovision

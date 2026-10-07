@@ -1,0 +1,1 @@
+--share-panel opens a modal save dialog at launch; it cannot be driven headless, so only a person confirms focus

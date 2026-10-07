@@ -219,7 +219,10 @@ final class HistoryTests: XCTestCase {
         let counter = try KeyCounter(store: store, calendar: clock.calendar, now: { clock.date })
         for i in 0..<400 { counter.record(terminal, kind: .typingCharacter, at: Double(i) * 0.15) }  // 400 keys over 60 s: 80 WPM
         let week = try counter.history(days: 7)
-        XCTAssertEqual(week.wpm ?? 0, 12.0 * (299 + 400) / (59.8 + 399 * 0.15), accuracy: 0.001)
+        // Split up so older compilers type-check it quickly: 699 net characters over both stretches.
+        let seconds: Double = 59.8 + 399 * 0.15
+        let expected: Double = 12.0 * 699 / seconds
+        XCTAssertEqual(week.wpm ?? 0, expected, accuracy: 0.001)
         XCTAssertEqual(week.apps.first?.count, 700)
     }
 }

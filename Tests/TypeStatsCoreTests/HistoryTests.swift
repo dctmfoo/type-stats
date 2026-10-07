@@ -229,7 +229,7 @@ final class HistoryTests: XCTestCase {
 
 /// The schema task 02 shipped (keys and clicks per day), as the owner's store is written now.
 enum TaskTwoSchema: VersionedSchema {
-    static let versionIdentifier = Schema.Version(2, 0, 0)
+    static var versionIdentifier: Schema.Version { Schema.Version(2, 0, 0) }
     static var models: [any PersistentModel.Type] { [AppDayCount.self] }
 
     @Model

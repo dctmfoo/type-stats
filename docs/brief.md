@@ -55,3 +55,5 @@ event tap (Input Monitoring permission). Agreed 2026-10-04.
    Clicking it opens App Updates with current/latest versions and a release status.
    A requested Homebrew update shows progress, restarts into the installed update, and
    leaves the running app available if upgrading or launching the replacement fails.
+10. (Added 2026-10-09) Show weekly typing hours in the 7-day popup and shared image,
+    following the [heatmap contract](run.md#views).

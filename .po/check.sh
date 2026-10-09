@@ -41,6 +41,8 @@ sh scripts/wpm-check.sh
 sh scripts/share-prototype-check.sh
 # Share (task 06): copy text/image to a named pasteboard, save, zero data, popup Share button.
 sh scripts/share-check.sh
+# Weekly heatmap: real hourly-store counts, shade thresholds, legacy coverage and future mask.
+sh scripts/heatmap-check.sh
 # Excluded apps: excluded apps are never counted, the list persists, history is kept, popup marker.
 sh scripts/exclude-check.sh
 # Pause counting: nothing counted while paused, pause survives restart, popup and icon show it.

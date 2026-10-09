@@ -11,6 +11,8 @@ public struct LaunchOptions: Equatable, Sendable {
     public var holdFlush = false
     /// Render a view without Screen Recording permission; see docs/run.md for test options.
     public var snapshot: URL?
+    /// With --no-tap, render snapshots and test windows in dark appearance.
+    public var darkSnapshot = false
     /// `--simulate-keys "bundleId:n,bundleId:n"`
     public var simulateKeys: [(bundleID: String, count: Int)] = []
     /// `--simulate-text "bundleId:text"`: one key press per character.
@@ -40,6 +42,9 @@ public struct LaunchOptions: Equatable, Sendable {
     /// each app with no hour, as counts saved before hourly tracking look (today's view then
     /// shows the "no hour" note).
     public var seedNoHour: [(bundleID: String, count: Int)] = []
+    /// `--screen-height <points>`: the visible screen height the 7-day popup is capped to,
+    /// instead of the real screen's, so a check gets the same layout on any display.
+    public var screenHeight: Double?
     /// `--measure-views`: open the popup in a window that follows its content size (as the
     /// menu bar window does), switch through every period while counts change, print each
     /// size and window frame, and exit.
@@ -89,6 +94,9 @@ public struct LaunchOptions: Equatable, Sendable {
     /// `--no-test-banner`: in test mode, leave the "Key capture off (test mode)" line out of the
     /// popup (for screenshots).
     public var noTestBanner = false
+    /// With --no-tap, show permission, login approval and login error banners without
+    /// requesting permissions or registering a system login item.
+    public var popupBanners = false
     /// Update verification seams. Overrides and actions are accepted only with --no-tap.
     public var updateVersion: String?
     public var updateCask: URL?
@@ -132,6 +140,8 @@ public struct LaunchOptions: Equatable, Sendable {
             case "--no-tap": o.noTap = true
             case "--hold-flush": o.holdFlush = true
             case "--snapshot": o.snapshot = URL(fileURLWithPath: try value("--snapshot"))
+            case "--dark-snapshot": o.darkSnapshot = true
+            case "--popup-banners": o.popupBanners = true
             case "--simulate-keys": o.simulateKeys = try parseKeys(try value("--simulate-keys"))
             case "--simulate-clicks": o.simulateClicks = try parseKeys(try value("--simulate-clicks"))
             case "--simulate-self-clicks":
@@ -151,6 +161,10 @@ public struct LaunchOptions: Equatable, Sendable {
                 guard let n = Int(spec), n > 0 else { throw ParseError.badSpec(spec) }
                 o.dumpHistory = n
             case "--seed-nohour": o.seedNoHour = try parseKeys(try value("--seed-nohour"))
+            case "--screen-height":
+                let spec = try value("--screen-height")
+                guard let n = Double(spec), n > 0 else { throw ParseError.badSpec(spec) }
+                o.screenHeight = n
             case "--measure-views": o.measureViews = true
             case "--share-cards": o.shareCards = URL(fileURLWithPath: try value("--share-cards"), isDirectory: true)
             case "--share-copy":
@@ -253,6 +267,7 @@ public struct LaunchOptions: Equatable, Sendable {
 
     public static func == (a: LaunchOptions, b: LaunchOptions) -> Bool {
         a.dataDir == b.dataDir && a.showWindow == b.showWindow && a.dumpCounts == b.dumpCounts
+            && a.darkSnapshot == b.darkSnapshot
             && a.noTap == b.noTap && a.holdFlush == b.holdFlush && a.snapshot == b.snapshot
             && a.simulateKeys.map { "\($0.bundleID):\($0.count)" } == b.simulateKeys.map { "\($0.bundleID):\($0.count)" }
             && a.simulateText?.bundleID == b.simulateText?.bundleID && a.simulateText?.text == b.simulateText?.text
@@ -261,7 +276,7 @@ public struct LaunchOptions: Equatable, Sendable {
             && a.at == b.at && a.dumpHours == b.dumpHours && a.dumpHistory == b.dumpHistory
             && a.dumpWPM == b.dumpWPM && a.loginStatus == b.loginStatus && a.view == b.view
             && a.seedNoHour.map { "\($0.bundleID):\($0.count)" } == b.seedNoHour.map { "\($0.bundleID):\($0.count)" }
-            && a.measureViews == b.measureViews && a.shareCards == b.shareCards
+            && a.screenHeight == b.screenHeight && a.measureViews == b.measureViews && a.shareCards == b.shareCards
             && a.shareCopy == b.shareCopy && a.pasteboard == b.pasteboard && a.shareSave == b.shareSave
             && a.pasteboardRead == b.pasteboardRead && a.pasteboardPNG == b.pasteboardPNG
             && a.sharePanel == b.sharePanel && a.exclude == b.exclude && a.include == b.include

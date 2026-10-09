@@ -41,9 +41,11 @@ public struct ShareSummary: Equatable, Sendable {
     public let apps: [AppRow]
     /// True for 7 and 30 days (a bar per day), false for today (a bar per hour).
     public let isDaily: Bool
+    /// Present only for the 7-day image, never synthesized from daily totals.
+    public let activity: WeeklyActivity?
 
     public init(title: String, dateText: String, keys: Int, clicks: Int, wpm: Int?,
-                buckets: [Bucket], apps: [AppRow], isDaily: Bool) {
+                buckets: [Bucket], apps: [AppRow], isDaily: Bool, activity: WeeklyActivity? = nil) {
         self.title = title
         self.dateText = dateText
         self.keys = keys
@@ -52,6 +54,7 @@ public struct ShareSummary: Equatable, Sendable {
         self.buckets = buckets
         self.apps = apps
         self.isDaily = isDaily
+        self.activity = activity
     }
 
     public var topThree: [AppRow] { Array(apps.prefix(3)) }
@@ -90,6 +93,7 @@ public struct ShareSummary: Equatable, Sendable {
     /// The summary of `period` from the counter's own counts (today's hours, or the last
     /// 7 or 30 days), as the popup shows them.
     @MainActor public static func make(period: StatsPeriod, counter: KeyCounter) -> ShareSummary {
+        let activity = period == .week ? try? counter.weeklyActivity() : nil
         let calendar = counter.calendar
         func format(_ pattern: String, _ date: Date) -> String {
             let f = DateFormatter()
@@ -124,6 +128,6 @@ public struct ShareSummary: Equatable, Sendable {
         return ShareSummary(
             title: "Last \(period.days) days", dateText: range,
             keys: history.totalKeys, clicks: history.totalClicks, wpm: history.wpm.map { Int($0.rounded()) },
-            buckets: buckets, apps: rows(history.apps), isDaily: true)
+            buckets: buckets, apps: rows(history.apps), isDaily: true, activity: activity)
     }
 }

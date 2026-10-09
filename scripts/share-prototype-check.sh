@@ -4,8 +4,8 @@
 #   - each card PNG exists with its exact size (A 1200x630, A week 1200x630, B 1080x1080,
 #     C text image 1200x630),
 #   - share-c-text.txt holds the sample totals and top apps,
-#   - the real popup (it now ships the Share button, task 06) has the same pixel size as
-#     the size in scripts/popup-size.txt (the one popup-size constant), so adding Share never changes the popup's size.
+#   - the Today popup matches the baseline in scripts/popup-size.txt.
+#     See docs/run.md for the 7-day popup's taller, screen-capped layout.
 # Usage: sh scripts/share-prototype-check.sh [out-dir]   (default .po/tmp/05-share-prototype/out)
 # Needs: sh scripts/bundle-app.sh first. SHARE_CARD_A_HEIGHT overrides the expected card A
 # height (used only to prove this check fails when a size is wrong).
@@ -59,6 +59,8 @@ popup() { # name flags...
 }
 popup popup-share.png
 ref=$(cat scripts/popup-size.txt)
+# A literal filename is intentional; this check covers only the Today share popup.
+# shellcheck disable=SC2043
 for f in popup-share.png; do
   got=$(size "$OUT/$f")
   [ "$got" = "$ref" ] || fail "$f is $got, scripts/popup-size.txt says $ref"

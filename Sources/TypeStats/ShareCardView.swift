@@ -147,6 +147,14 @@ struct ShareCardA: View {
     let sample: ShareSample
 
     var body: some View {
+        if let activity = sample.activity {
+            weeklyCard(activity)
+        } else {
+            standardCard
+        }
+    }
+
+    private var standardCard: some View {
         VStack(alignment: .leading, spacing: 22) {
             HStack(alignment: .firstTextBaseline) {
                 Text(sample.title).font(.system(size: 40, weight: .bold, design: .rounded))
@@ -187,6 +195,53 @@ struct ShareCardA: View {
             HStack { Spacer(); Footer(size: 22) }
         }
         .padding(48)
+        .frame(width: Self.size.width, height: Self.size.height)
+        .background(SharePalette.background)
+        .environment(\.colorScheme, .dark)
+    }
+
+    private func weeklyCard(_ activity: WeeklyActivity) -> some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(alignment: .firstTextBaseline) {
+                Text(sample.title).font(.system(size: 34, weight: .bold, design: .rounded))
+                Spacer()
+                Text(sample.dateText).font(.system(size: 22)).foregroundStyle(SharePalette.secondary)
+            }
+            BigNumbers(sample: sample, size: 70).frame(height: 84, alignment: .leading)
+            HStack(alignment: .top, spacing: 48) {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("By day").font(.system(size: 20, weight: .semibold))
+                    ActivityChart(sample: sample, axisSize: 16)
+                }
+                .frame(maxWidth: .infinity)
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Top apps").font(.system(size: 20, weight: .semibold))
+                    ForEach(sample.topThree) { app in
+                        VStack(alignment: .leading, spacing: 4) {
+                            HStack {
+                                Text(app.name).lineLimit(1)
+                                Spacer()
+                                Text(ShareSummary.number(app.keys)).monospacedDigit().foregroundStyle(SharePalette.keys)
+                            }
+                            GeometryReader { geometry in
+                                Capsule().fill(.white.opacity(0.08))
+                                Capsule().fill(SharePalette.keys)
+                                    .frame(width: geometry.size.width * Double(app.keys) / Double(max(1, sample.topThree.first?.keys ?? 1)))
+                            }
+                            .frame(height: 7)
+                        }
+                        .font(.system(size: 22, weight: .semibold, design: .rounded))
+                    }
+                    if sample.topThree.isEmpty { Text("Nothing counted yet").foregroundStyle(.secondary) }
+                }
+                .frame(width: 360)
+            }
+            .frame(height: 130)
+            WeeklyActivityView(activity: activity, scale: 1.2)
+            HStack { Spacer(); Footer(size: 20) }
+        }
+        .foregroundStyle(SharePalette.primary)
+        .padding(36)
         .frame(width: Self.size.width, height: Self.size.height)
         .background(SharePalette.background)
         .environment(\.colorScheme, .dark)

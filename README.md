@@ -9,8 +9,6 @@ clicked. Your counts stay on your Mac.
 
 <p>
   <img src="docs/images/popup-today.png" alt="TypeStats popup showing today's keys, clicks, typing speed, keys per hour and top apps" width="300">
-  &nbsp;
-  <img src="docs/images/popup-week.png" alt="TypeStats popup showing the last 7 days" width="300">
 </p>
 
 <img src="docs/images/share-card.png" alt="The share card: today's totals, keys per hour and the top three apps" width="620">
@@ -24,6 +22,8 @@ clicked. Your counts stay on your Mac.
   do not count.
 - **Today, 7 days, 30 days.** Totals, a keys-per-hour or keys-per-day chart, and the top apps
   with their keys, clicks and typing speed.
+- **Weekly typing hours.** A heatmap in the 7-day popup and shared image shows when you
+  typed most. See [how to read it](docs/run.md#views).
 - **Typing speed.** An estimate of net words per minute (5 characters to a word, deletions
   subtracted) during steady typing stretches of at least 10 seconds.
 - **Share.** Copy an image card, copy a one-line text summary, or save the card as a PNG.

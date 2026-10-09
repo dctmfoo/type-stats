@@ -8,8 +8,8 @@ description: Verify a type-stats change in the real macOS app before calling it 
 A successful build, a source grep or a search for a view name is NOT verification.
 Keep every fixture, data dir and screenshot under `.po/tmp/`, in a fresh folder per run.
 
-1. Run `sh .po/check.sh`. It builds, runs the unit tests and every real-app check in
-   `scripts/` (app-smoke, share, exclude, pause). Run it as one command; do not
+1. Run `sh .po/check.sh`. It builds, runs the unit tests and the real-app checks listed
+   in that runner. Run it as one command; do not
    run the scripts alone. Report which checks ran and their result.
 2. Drive the behavior you changed in the real bundle (`sh scripts/bundle-app.sh` first).
    The test seams are the table in `docs/run.md` ("Test seams"); use it, do not copy it here.

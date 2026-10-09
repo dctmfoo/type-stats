@@ -345,7 +345,7 @@ final class AppController {
         }
     }
 
-    /// Renders the same PopupView the menu bar shows into a PNG.
+    /// Renders the popup or App Updates into a PNG; test options are in docs/run.md.
     private func writeSnapshot(to url: URL) {
         let view = Group {
             if options.updatesWindow { AppUpdatesView(update: update) }

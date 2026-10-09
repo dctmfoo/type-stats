@@ -30,8 +30,12 @@ clicked. Your counts stay on your Mac.
 - **Excluded apps.** Never count a password manager or any other app you choose.
 - **Pause.** Stop counting for 15 minutes, an hour, or until you resume.
 - **Start at login.** One switch in the popup.
-- **App updates.** The footer shows your version or "Update available". Click it to check
-  the latest release or update your Homebrew installation and restart TypeStats.
+- **App updates.** The footer shows your version or "Update available". Click it to open
+  App Updates with current and latest versions. "Check for Updates" checks again; when a
+  newer release is available, "Update from Homebrew" installs it and restarts TypeStats.
+  In-app updates require the Homebrew-installed copy; ZIP and source builds must be
+  replaced manually.
+  See [update requirements and restart behavior](docs/run.md#app-updates).
 
 ## Install
 

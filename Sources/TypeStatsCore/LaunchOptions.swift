@@ -9,8 +9,7 @@ public struct LaunchOptions: Equatable, Sendable {
     /// Keep simulated presses unsaved until quit (no immediate or timed flush),
     /// so a check can prove that quitting saves pending counts.
     public var holdFlush = false
-    /// `--snapshot <png>`: render the popup view to a PNG after launch (for checks
-    /// on machines where the terminal cannot record the screen).
+    /// Render a view without Screen Recording permission; see docs/run.md for test options.
     public var snapshot: URL?
     /// `--simulate-keys "bundleId:n,bundleId:n"`
     public var simulateKeys: [(bundleID: String, count: Int)] = []

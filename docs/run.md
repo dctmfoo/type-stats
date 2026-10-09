@@ -22,8 +22,8 @@ sh scripts/package-release.sh 0.2.0  # release zip and Homebrew cask (see Releas
 `sh scripts/bundle-app.sh debug` builds a debug bundle instead.
 
 ## Everyday use: run the installed copy
-Run `sh scripts/install-app.sh` once (and again after each update). It builds the app,
-quits any running TypeStats (counts are saved), copies it to
+For source builds, run `sh scripts/install-app.sh` once and after each source update.
+It builds the app, quits any running TypeStats (counts are saved), copies it to
 `~/Applications/TypeStats.app` and opens that copy. Use that installed copy from then
 on, not `.build/TypeStats.app`: "Start at login" remembers the app's location, and
 `.build/` is replaced by every build and check. The install script also keeps the Input
@@ -76,19 +76,19 @@ requirement across releases, so Input Monitoring stays approved after `brew upgr
 The tap repository's README is kept here as `packaging/homebrew/README.md`.
 
 ## App updates
-The popup footer shows the running version. Opening the popup checks the published Homebrew
-cask at most once an hour; it becomes "Update available" when that cask is newer. Clicking
-the version opens App Updates with Current version, Latest version and release status.
-"Check for Updates" requests a fresh check. When a newer cask exists the button reads
-"Update from Homebrew". Checks read the version line from the published tap cask at
+See [App updates in the feature list](../README.md#features) for everyday use.
+Opening the popup or App Updates checks the published Homebrew cask unless a successful
+check completed within the last hour. Failures do not reset this timer. "Check for Updates"
+bypasses it. Checks read the version line from the published tap cask at
 https://raw.githubusercontent.com/dctmfoo/homebrew-type-stats/HEAD/Casks/type-stats.rb.
 This is the exact cask the release workflow publishes, so an unshipped GitHub tag is not offered.
 
-Updating locates Homebrew at `/opt/homebrew/bin/brew` or `/usr/local/bin/brew`, refreshes its
-metadata, confirms the running bundle is the installed cask target, and upgrades only
+Updating locates Homebrew at `/opt/homebrew/bin/brew` or `/usr/local/bin/brew`, confirms the
+running bundle is the installed cask target, refreshes its metadata, and upgrades only
 `dctmfoo/type-stats/type-stats` using `--no-quit`. Progress stays visible and errors leave
-TypeStats running. Once the installed bundle is at least the offered version, macOS launches
-a new instance; only a confirmed launch ends the old instance. Counts are saved before restart.
+TypeStats running. Once both the installed cask metadata and bundle report at least the
+offered version, macOS launches a new instance; only a confirmed launch ends the old instance.
+Counts are saved before restart.
 There are no silent updates. Updates require the Homebrew-installed app and a Homebrew version
 supporting `--no-quit`; an unsupported flag is shown as an error.
 
@@ -233,8 +233,7 @@ Counts are stored locally in a SwiftData store at
 - one row per day, hour and app: day, hour, bundle id, key count, click count;
 - one row per excluded app: bundle id and name.
 
-Key codes, characters, text, the time of any single press and click positions are
-never stored. Counts stay on this Mac; release checks send no counts or app names.
+See [Privacy](../README.md#privacy) for what is never stored and what update checks send.
 Older stores are upgraded in place on first launch: key and click counts are kept
 unchanged, typing time starts at 0 and earlier counts have no hour. A daily goal saved by an
 earlier version is ignored (the feature is gone) and does not stop the store from opening.
@@ -250,7 +249,7 @@ earlier version is ignored (the feature is gone) and does not stop the store fro
 | `--simulate-self-clicks n` | Order a TypeStats window front without activating it, then feed n clicks at its centre with no app given, so the real under-pointer lookup attributes them (expected: `local.typestats.TypeStats`) |
 | `--hold-flush` | Keep simulated presses unsaved until quit (proves quit saves them) |
 | `--show-window` | Also show the popup contents in a normal window |
-| `--snapshot <png>` | Render the popup view to a PNG after launch |
+| `--snapshot <png>` | Render the popup view to a PNG after launch, or App Updates when `--updates-window` is set |
 | `--simulate-typing "bundleId:keys:seconds,..."` | Feed timed key presses through the same pipeline: each segment spreads `keys` presses evenly over `seconds` (event timestamps, ending now); segments are separated by a 60 s idle pause. `A:300:60` gives about 60 wpm; segments under 10 seconds do not qualify |
 | `--at yyyy-MM-ddTHH:mm` | Freeze the app's clock at this local time: simulated events land on that day and hour, and "today" (popup and dumps) is that day |
 | `--view today\|week\|month` | Open the popup (and `--snapshot`) on that period |
@@ -259,7 +258,7 @@ earlier version is ignored (the feature is gone) and does not stop the store fro
 | `--share-copy image\|text --pasteboard <name>` | After simulating, copy the card or the line for `--view` to the NAMED pasteboard (never the general one; refused without `--pasteboard`) and exit |
 | `--share-save <path>` | After simulating, write the 2400x1260 card for `--view` to that path (no dialog) and exit |
 | `--pasteboard-read <name> [--pasteboard-png <path>]` | Print what a named pasteboard holds (`text`, `png`, `tiff` with pixel size) and release it, optionally saving the PNG; exit |
-| `--ready-file <path>` | Write this file once startup, the simulated presses and clicks, and any `--snapshot` are done. `scripts/app-smoke.sh` waits on it after every launch instead of sleeping; if it never appears the smoke prints "app did not start counting" with a `sample` of the process. Not written by the exit-early seams (`--dump-*`, `--share-*`, `--measure-views` when it exits) |
+| `--ready-file <path>` | Write this file once startup, the simulated presses and clicks, any requested startup update check/action, and any `--snapshot` are done. A successful update exits the old instance; use `--update-relaunch-ready` to observe its replacement. `scripts/app-smoke.sh` waits on it after every launch instead of sleeping; if it never appears the smoke prints "app did not start counting" with a `sample` of the process. Not written by the exit-early seams (`--dump-*`, `--share-*`, `--measure-views` when it exits) |
 | `--share-panel` | Open the Save image dialog at launch (what the menu's Save image... does) |
 | `--exclude "bundleId,..."` | Before simulating, add these apps to the excluded list (the call the popup's Exclude button makes) |
 | `--include "bundleId,..."` | Remove these apps from the excluded list (the Remove button's call), then simulate |
@@ -279,8 +278,12 @@ earlier version is ignored (the feature is gone) and does not stop the store fro
 | `--update-brew <path>` | With `--no-tap` and `--data-dir`, use this executable instead of system Homebrew |
 | `--updates-window` | With `--no-tap`, check then open App Updates; `--snapshot` renders that dialog |
 | `--perform-update` | With `--no-tap`, check then run the same update action as the button; use a fixture brew for automated checks |
-| `--update-relaunch-ready <path>` | A test relaunch writes this ready file, keeps `--no-tap` and its isolated data folder |
+| `--update-relaunch-ready <path>` | With `--no-tap` and `--data-dir`, the replacement writes this ready file and keeps test mode and the isolated data folder |
 | `--login-status` | Print the real login item status (`enabled`, `disabled` or `requiresApproval`), read only, and exit |
+
+For automated update verification, pass both `--data-dir <scratch folder>` and
+`--update-brew <fixture executable>` with `--no-tap`. Test mode alone does not prevent
+`--perform-update` or the update button from running system Homebrew.
 
 Example: `open -n .build/TypeStats.app --args --data-dir "$PWD/.po/tmp/x" --no-tap --show-window --simulate-keys "com.apple.TextEdit:5" --simulate-clicks "com.apple.finder:3"`.
 History example: `.build/TypeStats.app/Contents/MacOS/TypeStats --data-dir "$PWD/.po/tmp/x" --no-tap --at 2026-10-01T14:00 --simulate-typing "com.apple.TextEdit:300:60"`,

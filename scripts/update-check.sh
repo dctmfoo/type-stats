@@ -41,7 +41,8 @@ run available --update-version 0.0.0 --updates-window
 grep -q 'new version is available' "$W/available.txt" || fail 'no update status'
 grep -q 'Update from Homebrew' "$W/available.txt" || fail 'wrong update action'
 run footer-current --update-version 0.1.0
-grep -q 'Version 0.1.0' "$W/footer-current.txt" || fail 'footer version missing'
+# Vision can read the leading zero as a capital O in the taller shared popup.
+grep -Eq 'Version [0O]\.1\.0' "$W/footer-current.txt" || fail 'footer version missing'
 run footer-available --update-version 0.0.0
 grep -q 'Update available' "$W/footer-available.txt" || fail 'footer indicator missing'
 [ "$(sips -g pixelHeight "$W/footer-current.png" | awk '/pixelHeight/ {print $2}')" = \
@@ -82,6 +83,8 @@ wait "$pid" 2>/dev/null || true
 pid=
 cleanup
 n=0
+# Match the isolated data path literally; pgrep would treat it as a regular expression.
+# shellcheck disable=SC2009
 while ps -axo command= | grep -F "TypeStats --no-tap --data-dir $W/relaunch" | grep -v grep >/dev/null; do
   n=$((n + 1)); [ "$n" -le 50 ] || fail 'replacement app did not quit'; sleep 0.2
 done

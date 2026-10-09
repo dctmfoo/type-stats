@@ -52,6 +52,6 @@ the slot, fixed row-label height, adjusted share scale and inspected native and 
 renders. A repeated peak must not imply a unique winner; name the first and state the
 total number tied. A stale day at midnight must not double-count pending hours; refresh
 the day before building the snapshot and test before and after flush/reopen.
-Consider: the 7-day popup is taller than the other periods; Top apps scroll only past the visible screen height.
+Consider: see [Views](../docs/run.md#views) for the current popup sizing and scrolling contract.
 Noted: native event-tap and actual menu-opening proof remain outside this seeded feature check.
 Dismissed: a storage migration or inferred hours would add risk and fabricate evidence.

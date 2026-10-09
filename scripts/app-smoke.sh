@@ -296,7 +296,7 @@ png_size() { sips -g pixelWidth -g pixelHeight "$1" | awk '/pixel/ {printf "%sx"
 # One snapshot per view, each with a different data shape; all must be the same size.
 # today: counts with no hour (so the note shows) and ten apps (more than the list holds)
 DATA="$STEADY/today"; mkdir -p "$DATA"
-launch --at "$STEADY_NOW" --view today --snapshot "$STEADY/today.png" \
+launch --at "$STEADY_NOW" --view today --screen-height 5000 --snapshot "$STEADY/today.png" \
   --seed-nohour "$A:40" --simulate-keys "$B:9,$C:8,l.a:7,l.b:6,l.c:5,l.d:4,l.e:3,l.f:2,l.g:1" --simulate-clicks "$A:2"
 i=0; until [ -s "$STEADY/today.png" ]; do i=$((i + 1)); [ $i -le 50 ] || fail "today snapshot not rendered"; sleep 0.2; done
 stop_app
@@ -308,35 +308,30 @@ i=0; until [ -s "$STEADY/week.png" ]; do i=$((i + 1)); [ $i -le 50 ] || fail "we
 stop_app
 # month: only today has counts (0 past days with data), one app
 DATA="$STEADY/month"; mkdir -p "$DATA"
-launch --at "$STEADY_NOW" --view month --snapshot "$STEADY/month.png" --simulate-keys "$A:3"
+launch --at "$STEADY_NOW" --view month --screen-height 5000 --snapshot "$STEADY/month.png" --simulate-keys "$A:3"
 i=0; until [ -s "$STEADY/month.png" ]; do i=$((i + 1)); [ $i -le 50 ] || fail "month snapshot not rendered"; sleep 0.2; done
 stop_app
 today_size=$(png_size "$STEADY/today.png")
-[ "$(png_size "$STEADY/month.png")" = "$today_size" ] \
-  || fail "popup size differs between views: today $today_size, month $(png_size "$STEADY/month.png")"
-# The 7-day view adds the heatmap (148 pt, 296 px at 2x) and keeps full-height Top apps.
-week_size="${today_size%x*}x$((${today_size#*x} + 296))"
-[ "$(png_size "$STEADY/week.png")" = "$week_size" ] \
-  || fail "7-day popup is $(png_size "$STEADY/week.png"), expected $week_size"
-echo "PASS popup is the same size for Today and 30 days ($today_size px) and 148 pt taller for 7 days ($week_size px)"
+for view in week month; do
+  [ "$(png_size "$STEADY/$view.png")" = "$today_size" ] \
+    || fail "popup size differs between views: today $today_size, $view $(png_size "$STEADY/$view.png")"
+done
+echo "PASS popup snapshots keep one size for Today, 7 days and 30 days ($today_size px)"
 
-# A live window that follows the popup's content size (like the menu bar window) switches
-# through every view while counts arrive; its size and frame stay fixed within a view, and only 7 days is taller.
-DATA="$STEADY/live"; mkdir -p "$DATA"
-"$BIN" --data-dir "$DATA" --no-tap --at "$STEADY_NOW" --seed-nohour "$A:40" --simulate-keys "$B:5" \
-  --screen-height 5000 --measure-views > "$STEADY/measure.txt" &
-i=0; while kill -0 $! 2>/dev/null; do i=$((i + 1)); [ $i -le 300 ] || { kill $!; fail "--measure-views did not finish"; }; sleep 0.1; done
-[ "$(wc -l < "$STEADY/measure.txt" | tr -d ' ')" = 9 ] || { cat "$STEADY/measure.txt"; fail "--measure-views did not report 9 steps"; }
-[ "$(grep -v week "$STEADY/measure.txt" | cut -f2- | sort -u | wc -l | tr -d ' ')" = 1 ] \
-  || { cat "$STEADY/measure.txt"; fail "popup size or window frame changed while switching between Today and 30 days or counting"; }
-[ "$(grep week "$STEADY/measure.txt" | cut -f2- | sort -u | wc -l | tr -d ' ')" = 1 ] \
-  || { cat "$STEADY/measure.txt"; fail "7-day popup size or window frame changed while counting"; }
-other=$(grep -v week "$STEADY/measure.txt" | sed -n 1p | cut -f2-)
-week=$(grep week "$STEADY/measure.txt" | sed -n 1p | cut -f2-)
-[ "$(echo "$week" | cut -f1,3,4,5)" = "$(echo "$other" | cut -f1,3,4,5)" ] \
-  || { cat "$STEADY/measure.txt"; fail "7-day popup width or position differs from the other views"; }
-[ "$(echo "$week" | cut -f2)" -gt "$(echo "$other" | cut -f2)" ] \
-  || { cat "$STEADY/measure.txt"; fail "7-day popup is not taller than the other views"; }
-echo "PASS live popup keeps its size and position across 9 steps (width height x y w h: $(echo "$other" | tr '\t' ' '); 7 days: $(echo "$week" | tr '\t' ' '))"
+# Follow preferred content size just like the menu bar window. Cover every directed
+# period switch, with live counts and app rows crossing the eight-row limit.
+# The same inner scrolling viewport shrinks on small screens, never the footer.
+for height in 5000 700 500; do
+  DATA="$STEADY/live-$height"; mkdir -p "$DATA"
+  "$BIN" --data-dir "$DATA" --no-tap --at "$STEADY_NOW" --seed-nohour "$A:40" --simulate-keys "$B:5" \
+    --screen-height "$height" --measure-views > "$STEADY/measure-$height.txt" &
+  pid=$!
+  i=0; while kill -0 "$pid" 2>/dev/null; do i=$((i + 1)); [ $i -le 300 ] || { kill "$pid"; fail "--measure-views did not finish"; }; sleep 0.1; done
+  wait "$pid" || fail "--measure-views failed"
+  [ "$(wc -l < "$STEADY/measure-$height.txt" | tr -d ' ')" = 13 ] || { cat "$STEADY/measure-$height.txt"; fail "--measure-views did not report 13 steps"; }
+  [ "$(cut -f2- "$STEADY/measure-$height.txt" | sort -u | wc -l | tr -d ' ')" = 1 ] \
+    || { cat "$STEADY/measure-$height.txt"; fail "popup size or window frame changed while switching periods or counting on a $height pt screen"; }
+  echo "PASS live popup keeps one size and position across all 13 steps on a $height pt screen"
+done
 
 echo "PASS app-smoke"

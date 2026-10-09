@@ -5,7 +5,7 @@
 #     C text image 1200x630),
 #   - share-c-text.txt holds the sample totals and top apps,
 #   - the Today popup matches the baseline in scripts/popup-size.txt.
-#     See docs/run.md for the 7-day popup's taller, screen-capped layout.
+#     All periods share this size; see docs/run.md for the screen-capped layout.
 # Usage: sh scripts/share-prototype-check.sh [out-dir]   (default .po/tmp/05-share-prototype/out)
 # Needs: sh scripts/bundle-app.sh first. SHARE_CARD_A_HEIGHT overrides the expected card A
 # height (used only to prove this check fails when a size is wrong).

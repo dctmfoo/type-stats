@@ -325,8 +325,7 @@ final class AppController {
     }
 
     private func makeWindow() -> NSWindow {
-        // Match the menu bar popup's preferred sizing instead of proposing a fixed
-        // 560 pt test window, which forces the flexible weekly list to its minimum.
+        // Follow the menu bar popup's shared preferred size and screen-capped detail viewport.
         let host = NSHostingController(rootView: PopupView(controller: self, period: options.view, showExcluded: options.excludedPage))
         host.sizingOptions = [.preferredContentSize]
         let w = NSWindow(contentViewController: host)
@@ -361,12 +360,17 @@ final class AppController {
             }
             await report("start")
             var extra = 0
-            for period in StatsPeriod.allCases + [.today] {
+            // Every directed pair, including switches back from the weekly heatmap.
+            for period in [StatsPeriod.week, .today, .month, .week, .month, .today] {
                 self.periodRequest = period
                 await report("switch-\(period.rawValue)")
-                // Live counts arrive (a new app each time, so the app list grows past its limit).
+                // Grow past the visible row limit to exercise the popup's fixed size.
                 extra += 1
-                for _ in 0..<(40 * extra) { self.counter.record(AppController.identity(forBundleID: "local.typestats.measure.\(extra)")) }
+                for app in 0..<2 {
+                    for _ in 0..<(40 * extra) {
+                        self.counter.record(AppController.identity(forBundleID: "local.typestats.measure.\(extra).\(app)"))
+                    }
+                }
                 await report("count-\(period.rawValue)")
             }
             fflush(stdout)

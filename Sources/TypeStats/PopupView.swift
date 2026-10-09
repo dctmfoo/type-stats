@@ -13,7 +13,8 @@ struct PopupView: View {
     static let chartHeight: CGFloat = 110
     static let noteHeight: CGFloat = 28
     static let appRowHeight: CGFloat = 28
-    static let appListHeight = CGFloat(topLimit) * appRowHeight + 8
+    /// One content budget for every period, including the weekly heatmap and eight app rows.
+    static let detailHeight: CGFloat = 580
     /// Room kept between the popup and the bottom of the visible screen.
     static let screenMargin: CGFloat = 8
     static let totalFont = Font.system(size: 28, weight: .bold, design: .rounded)
@@ -31,8 +32,7 @@ struct PopupView: View {
         let history = period == .today ? nil : try? counter.history(days: period.days)
         let topRows = history.map { counter.markExcluded(Array($0.apps.prefix(Self.topLimit))) } ?? counter.topApps(limit: Self.topLimit)
         content(counter: counter, history: history, topRows: topRows, activity: activity)
-            // The 7-day view is taller than the other periods (it adds the heatmap). If it would
-            // not fit the screen, the scrolling Top apps list gives up height, never the footer.
+            // Only the shared detail viewport gives up height on smaller screens.
             .frame(maxHeight: controller.visibleScreenHeight - Self.screenMargin, alignment: .top)
             // The Excluded apps page covers the normal contents, which keep their size, so
             // the popup never resizes when the page opens or closes.
@@ -55,17 +55,35 @@ struct PopupView: View {
 
     private func content(counter: KeyCounter, history: History?, topRows: [AppCount], activity: WeeklyActivity?) -> some View {
         VStack(alignment: .leading, spacing: 12) {
-            PeriodPicker(selection: $period)
+            VStack(alignment: .leading, spacing: 12) {
+                PeriodPicker(selection: $period)
+                header(history)
+                totals(keys: history?.totalKeys ?? counter.total,
+                       clicks: history?.totalClicks ?? counter.totalClicks,
+                       wpm: history.map(\.wpm) ?? counter.wpm)
+                PauseRow(pause: controller.pause)
+                statusBanner
+            }
+            .fixedSize(horizontal: false, vertical: true)
 
-            header(history)
-            totals(keys: history?.totalKeys ?? counter.total,
-                   clicks: history?.totalClicks ?? counter.totalClicks,
-                   wpm: history.map(\.wpm) ?? counter.wpm)
+            ViewThatFits(in: .vertical) {
+                details(counter: counter, history: history, topRows: topRows, activity: activity)
+                ScrollView {
+                    details(counter: counter, history: history, topRows: topRows, activity: activity)
+                }
+                // Start each newly selected period at its chart, not halfway down the previous one.
+                .id(period)
+            }
+            .frame(minHeight: 0, idealHeight: Self.detailHeight, maxHeight: Self.detailHeight, alignment: .top)
 
-            PauseRow(pause: controller.pause)
+            Divider()
+            footer.fixedSize(horizontal: false, vertical: true)
+        }
+        .padding(16)
+    }
 
-            statusBanner
-
+    private func details(counter: KeyCounter, history: History?, topRows: [AppCount], activity: WeeklyActivity?) -> some View {
+        VStack(alignment: .leading, spacing: 12) {
             if let history {
                 dayChart(history)
                 if period == .week {
@@ -75,16 +93,17 @@ struct PopupView: View {
                     }
                     .frame(height: WeeklyActivityView.height, alignment: .top)
                 }
-                topApps(topRows, empty: "Nothing counted in the last \(period.days) days.")
             } else {
                 hourChart(counter)
-                topApps(topRows, empty: "No key presses or clicks counted yet today.")
             }
-
-            Divider()
-            footer
+            topApps(topRows, empty: history == nil
+                    ? "No key presses or clicks counted yet today."
+                    : "Nothing counted in the last \(period.days) days.")
+                .fixedSize(horizontal: false, vertical: true)
         }
-        .padding(16)
+        // The chart uses the heatmap's room in Today/30 days, and the space unused by
+        // fewer app rows in every period. No blank reserved rows beneath the list.
+        .frame(height: Self.detailHeight)
     }
 
     // MARK: Header and totals
@@ -161,7 +180,7 @@ struct PopupView: View {
                 }
             }
             .chartYAxis { AxisMarks(position: .leading, values: .automatic(desiredCount: 3)) }
-            .frame(height: Self.chartHeight)
+            .frame(minHeight: Self.chartHeight, maxHeight: .infinity)
             noteSlot {
                 if counter.keysWithoutHour + counter.clicksWithoutHour > 0 {
                     Text("\(counter.keysWithoutHour) keys and \(counter.clicksWithoutHour) clicks today were counted before hourly tracking, so they have no hour.")
@@ -196,7 +215,7 @@ struct PopupView: View {
                 }
             }
             .chartYAxis { AxisMarks(position: .leading, values: .automatic(desiredCount: 3)) }
-            .frame(height: Self.chartHeight)
+            .frame(minHeight: Self.chartHeight, maxHeight: .infinity)
             if period != .week { noteSlot {} }
         }
     }
@@ -227,17 +246,8 @@ struct PopupView: View {
                 .buttonStyle(.plain)
                 .accessibilityIdentifier("excludedApps")
             }
-            appList(top, empty: empty)
-                .frame(minHeight: period == .week ? Self.appRowHeight + 8 : Self.appListHeight,
-                       idealHeight: Self.appListHeight, maxHeight: Self.appListHeight, alignment: .top)
-        }
-    }
-
-    @ViewBuilder private func appList(_ top: [AppCount], empty: String) -> some View {
-        if period == .week {
-            ScrollView { appChart(top, empty: empty) }
-        } else {
             appChart(top, empty: empty)
+                .frame(height: top.isEmpty ? 84 : CGFloat(top.count) * Self.appRowHeight + 8, alignment: .top)
         }
     }
 
@@ -269,7 +279,7 @@ struct PopupView: View {
                 .chartXAxis(.hidden)
                 // Room on the right of the longest bar for its label.
                 .chartXScale(domain: 0...(Double(max(top.first?.count ?? 1, 1)) * 2.3))
-                // Rows keep their height; fewer apps leave the rest of the list empty.
+                // Rows keep their height; the chart above uses the room left by fewer apps.
                 .frame(height: CGFloat(top.count) * Self.appRowHeight + 8)
             }
         }

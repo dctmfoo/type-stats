@@ -34,10 +34,10 @@ record 2026-10-05T09:00 --seed-nohour sample.Legacy:50
 "$BIN" --no-tap --data-dir "$DATA" --at 2026-10-05T10:30 --hold-flush \
   --simulate-keys sample.Notes:1 --view week --share-save "$W/share-week.png"
 popup() {
-  name=$1; shift
+  name=$1; view=$2; shift 2
   rm -f "$W/ready"
   "$BIN" --no-tap --data-dir "$DATA" --at 2026-10-05T10:30 --hold-flush \
-    --simulate-keys sample.Notes:1 --view week "$@" \
+    --simulate-keys sample.Notes:1 --view "$view" "$@" \
     --snapshot "$W/$name.png" --ready-file "$W/ready" > "$W/$name.log" 2>&1 &
   pid=$!
   n=0
@@ -49,31 +49,65 @@ popup() {
 }
 size() { sips -g pixelWidth -g pixelHeight "$1" | awk '/pixel/ {printf "%sx", $2}' | sed 's/x$//'; }
 # Light is the default appearance; the popup follows it.
-popup popup-week-dark --dark-snapshot --screen-height 5000
-popup popup-week-light --screen-height 5000
-popup popup-week-capped --screen-height 700
-popup popup-week-banners --popup-banners --screen-height 875
-popup popup-week-banners-full --popup-banners --screen-height 5000
+for view in today week month; do
+  popup "popup-$view-dark" "$view" --dark-snapshot --screen-height 5000
+  popup "popup-$view-light" "$view" --screen-height 5000
+  popup "popup-$view-capped" "$view" --screen-height 700
+  popup "popup-$view-small" "$view" --screen-height 500
+  popup "popup-$view-banners" "$view" --popup-banners --screen-height 875
+  popup "popup-$view-banners-full" "$view" --popup-banners --screen-height 5000
+done
 python3 scripts/heatmap-probe.py dark:"$W/popup-week-dark.png" light:"$W/popup-week-light.png" dark:"$W/share-week.png" || fail 'grid or shade mismatch'
 swift scripts/ocr.swift "$W/share-week.png" > "$W/share.txt"
 grep -q 'Based on 704 of 804 keys' "$W/share.txt" || fail 'coverage note missing or wrong'
 grep -q 'Peak Tue 29, 4-5 pm' "$W/share.txt" || fail 'peak label missing or wrong'
 grep -q 'Not yet' "$W/share.txt" || fail 'future-hour legend missing'
-# The 7-day popup is 296 px (148 pt) taller than the other views, with full-height Top apps,
-# and only the Top apps list shrinks (the footer stays) when the visible screen height is smaller.
-today=$(cat scripts/popup-size.txt)
-week_height=$((${today#*x} + 296))
-[ "$(size "$W/popup-week-dark.png")" = "${today%x*}x$week_height" ] || fail "7-day popup is $(size "$W/popup-week-dark.png"), expected ${today%x*}x$week_height"
-[ "$(size "$W/popup-week-light.png")" = "${today%x*}x$week_height" ] || fail '7-day light popup size differs from dark'
-[ "$(size "$W/popup-week-capped.png")" = "${today%x*}x1384" ] || fail "7-day popup on a 700 pt screen is $(size "$W/popup-week-capped.png"), expected ${today%x*}x1384"
-swift scripts/ocr.swift "$W/popup-week-capped.png" | grep -q Quit || fail 'capped 7-day popup lost its footer'
-banner_size=$(size "$W/popup-week-banners.png")
-[ "$banner_size" = "${today%x*}x1734" ] || fail "banner popup is $banner_size, expected ${today%x*}x1734"
-for image in popup-week-banners popup-week-banners-full; do
-  swift scripts/ocr.swift "$W/$image.png" > "$W/$image.txt"
-  for text in 'Permission needed' 'Allow TypeStats in Login Items' 'Could not change login item' 'Share' 'Quit'; do
-    grep -q "$text" "$W/$image.txt" || fail "$image lost $text"
+# One snapshot size across periods, appearances, data shapes and screen caps.
+# Permission and login banners do not take height away from the footer.
+expected=$(cat scripts/popup-size.txt)
+for view in today week month; do
+  for appearance in dark light; do
+    [ "$(size "$W/popup-$view-$appearance.png")" = "$expected" ] \
+      || fail "$view $appearance popup is $(size "$W/popup-$view-$appearance.png"), expected $expected"
   done
+  for cap in capped small banners banners-full; do
+    image=popup-$view-$cap
+    [ "$(size "$W/$image.png")" = "$(size "$W/popup-today-$cap.png")" ] || fail "$image size differs from Today"
+    swift scripts/ocr.swift "$W/$image.png" > "$W/$image.txt"
+    for text in 'Share' 'Quit'; do
+      grep -q "$text" "$W/$image.txt" || fail "$image lost $text"
+    done
+    case "$cap" in
+      capped) wanted="${expected%x*}x1384" ;;
+      small) wanted="${expected%x*}x984" ;;
+      banners) wanted="${expected%x*}x1734" ;;
+      banners-full) wanted=$(size "$W/popup-today-banners-full.png") ;;
+    esac
+    [ "$(size "$W/$image.png")" = "$wanted" ] || fail "$image did not respect the screen cap ($wanted)"
+    case "$cap" in
+      banners*)
+        for text in 'Permission needed' 'Allow TypeStats in Login Items' 'Could not change login item'; do
+          grep -q "$text" "$W/$image.txt" || fail "$image lost $text"
+        done ;;
+    esac
+  done
+done
+# A hosting window follows content size, so a stray per-period height must fail here too.
+for height in 5000 700 500 875; do
+  banners=
+  [ "$height" != 875 ] || banners=--popup-banners
+  "$BIN" --no-tap --data-dir "$DATA" --at 2026-10-05T10:30 --screen-height "$height" \
+    $banners --measure-views > "$W/measure-$height.txt" &
+  pid=$!
+  n=0
+  while kill -0 "$pid" 2>/dev/null; do
+    n=$((n + 1)); [ "$n" -le 150 ] || fail '--measure-views did not finish'
+    sleep 0.2
+  done
+  wait "$pid" || fail '--measure-views failed'; pid=
+  [ "$(wc -l < "$W/measure-$height.txt" | tr -d ' ')" = 13 ] || fail '--measure-views did not report 13 steps'
+  [ "$(cut -f2- "$W/measure-$height.txt" | sort -u | wc -l | tr -d ' ')" = 1 ] \
+    || fail "popup fitting size or window frame changed on a $height pt screen"
 done
 [ "$(sips -g pixelWidth -g pixelHeight "$W/share-week.png" | awk '/pixel/ {printf "%sx", $2}' | sed 's/x$//')" = '2400x1260' ] || fail 'share size changed'
 DATA="$FIXTURES/edge"; mkdir -p "$DATA"
@@ -100,4 +134,4 @@ DATA="$FIXTURES/empty"; mkdir -p "$DATA"
 "$BIN" --no-tap --data-dir "$DATA" --at 2026-10-05T10:30 --view week --share-save "$W/empty-week.png"
 swift scripts/ocr.swift "$W/empty-week.png" > "$W/empty-week.txt"
 grep -q 'No hourly typing yet' "$W/empty-week.txt" || fail 'empty week invents a peak'
-echo "PASS heatmap: 7x24 cells in light and dark, full-height Top apps capped to the screen, four blue steps, zero and future cells, pending count, coverage and peak; renders in $W"
+echo "PASS heatmap: 7x24 cells in light and dark, identical popup sizes and live frames across periods and screen caps, fixed footer, four blue steps, zero and future cells, pending count, coverage and peak; renders in $W"

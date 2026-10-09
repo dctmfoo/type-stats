@@ -15,6 +15,7 @@ sh scripts/app-smoke.sh        # real-app check (needs the bundle above)
 sh scripts/exclude-check.sh    # excluded-apps check (needs the bundle above)
 sh scripts/pause-check.sh      # pause counting check (needs the bundle above)
 sh scripts/heatmap-check.sh    # weekly cell/shade render check (needs the bundle above)
+sh scripts/popup-real-check.sh # opens the REAL menu bar popup, every period (moves the mouse; needs the bundle above)
 sh .po/check.sh                # full project check (the full real-app check)
 sh scripts/install-app.sh      # build, quit any running copy, install to ~/Applications and open it
 sh scripts/readme-screenshots.sh   # render docs/images/ from made-up sample data
@@ -312,7 +313,12 @@ The uncapped popup's expected pixel size in every period with the test banner (w
 height at 2x) is `scripts/popup-size.txt`, read by `scripts/share-check.sh`,
 `scripts/share-prototype-check.sh` and `scripts/heatmap-check.sh`.
 The steady-popup smoke and heatmap checks require identical snapshot sizes and identical
-live window frames across every period, including screen-capped layouts.
+live window frames across every period, including screen-capped layouts. They use a hosting
+window, which does not size like the menu bar window did when the detail area collapsed, so
+`scripts/popup-real-check.sh` also opens the real popup from the status item (cliclick, and
+Accessibility plus Screen Recording permission for the terminal), switches Today, 7 days and
+30 days through its buttons, and requires one window frame, a detail area at least 400 pt
+tall and the chart, heatmap, Top apps and footer text on screen, on a tall and a 700 pt screen.
 `kill -TERM <pid>` quits the app normally (counts are saved).
 
 ## Smoke

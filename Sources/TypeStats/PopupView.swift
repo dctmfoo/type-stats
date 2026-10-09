@@ -17,6 +17,7 @@ struct PopupView: View {
     static let detailHeight: CGFloat = 580
     /// Room kept between the popup and the bottom of the visible screen.
     static let screenMargin: CGFloat = 8
+    static let padding: CGFloat = 16
     static let totalFont = Font.system(size: 28, weight: .bold, design: .rounded)
     static let keysColor = Color.accentColor
 
@@ -32,8 +33,6 @@ struct PopupView: View {
         let history = period == .today ? nil : try? counter.history(days: period.days)
         let topRows = history.map { counter.markExcluded(Array($0.apps.prefix(Self.topLimit))) } ?? counter.topApps(limit: Self.topLimit)
         content(counter: counter, history: history, topRows: topRows, activity: activity)
-            // Only the shared detail viewport gives up height on smaller screens.
-            .frame(maxHeight: controller.visibleScreenHeight - Self.screenMargin, alignment: .top)
             // The Excluded apps page covers the normal contents, which keep their size, so
             // the popup never resizes when the page opens or closes.
             .opacity(showExcluded ? 0 : 1)
@@ -54,7 +53,10 @@ struct PopupView: View {
     }
 
     private func content(counter: KeyCounter, history: History?, topRows: [AppCount], activity: WeeklyActivity?) -> some View {
-        VStack(alignment: .leading, spacing: 12) {
+        // Only the shared detail viewport gives up height on smaller screens.
+        PopupLayout(detailHeight: Self.detailHeight,
+                    maxHeight: controller.visibleScreenHeight - Self.screenMargin - 2 * Self.padding,
+                    spacing: 12) {
             VStack(alignment: .leading, spacing: 12) {
                 PeriodPicker(selection: $period)
                 header(history)
@@ -64,22 +66,24 @@ struct PopupView: View {
                 PauseRow(pause: controller.pause)
                 statusBanner
             }
-            .fixedSize(horizontal: false, vertical: true)
-
+            // The layout proposes the detail height; the content scrolls only when it does not fit.
             ViewThatFits(in: .vertical) {
                 details(counter: counter, history: history, topRows: topRows, activity: activity)
                 ScrollView {
                     details(counter: counter, history: history, topRows: topRows, activity: activity)
                 }
+                .scrollBounceBehavior(.basedOnSize)
                 // Start each newly selected period at its chart, not halfway down the previous one.
                 .id(period)
             }
-            .frame(minHeight: 0, idealHeight: Self.detailHeight, maxHeight: Self.detailHeight, alignment: .top)
-
-            Divider()
-            footer.fixedSize(horizontal: false, vertical: true)
+            .accessibilityElement(children: .contain)
+            .accessibilityIdentifier("detail")
+            VStack(alignment: .leading, spacing: 12) {
+                Divider()
+                footer
+            }
         }
-        .padding(16)
+        .padding(Self.padding)
     }
 
     private func details(counter: KeyCounter, history: History?, topRows: [AppCount], activity: WeeklyActivity?) -> some View {
@@ -486,5 +490,39 @@ private struct PauseRow: View {
             menu.addItem(item)
         }
         menu.popUp(positioning: nil, at: NSEvent.mouseLocation, in: nil)
+    }
+}
+
+/// Pinned top, scrolling detail, pinned footer. The detail gets its full height unless the
+/// screen is too short, so the popup's size comes from this layout and the screen, not from
+/// the height the hosting window happens to offer (the menu bar window offers none, which
+/// once collapsed the detail area to nothing).
+struct PopupLayout: Layout {
+    var detailHeight: CGFloat
+    var maxHeight: CGFloat
+    var spacing: CGFloat
+
+    private func heights(_ subviews: Subviews, width: CGFloat) -> (top: CGFloat, detail: CGFloat, footer: CGFloat) {
+        let proposal = ProposedViewSize(width: width, height: nil)
+        let top = subviews[0].sizeThatFits(proposal).height
+        let footer = subviews[2].sizeThatFits(proposal).height
+        let room = maxHeight - top - footer - 2 * spacing
+        return (top, max(0, min(detailHeight, room)), footer)
+    }
+
+    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
+        let width = proposal.width ?? subviews[0].sizeThatFits(.unspecified).width
+        let h = heights(subviews, width: width)
+        return CGSize(width: width, height: h.top + h.detail + h.footer + 2 * spacing)
+    }
+
+    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
+        let h = heights(subviews, width: bounds.width)
+        var y = bounds.minY
+        for (subview, height) in zip(subviews, [h.top, h.detail, h.footer]) {
+            subview.place(at: CGPoint(x: bounds.minX, y: y), anchor: .topLeading,
+                          proposal: ProposedViewSize(width: bounds.width, height: height))
+            y += height + spacing
+        }
     }
 }

@@ -1,57 +1,25 @@
-# Show weekly typing hours in the popup and shared image
+# Fix the collapsed menu bar popup
 
 ## What changed
 
-Added weekly typing hours to the 7-day popup and shared image. See
-[Views](../docs/run.md#views) for the display contract and [Share](../docs/run.md#share)
-for export behavior.
-Today's live counts are included once; pending counts from an ended day are included
-once before and after a flush. Past hourly reads are cached without changing storage.
+0.1.3 opened the real menu bar popup with only the picker, totals, Pause row and footer:
+the hour chart, day chart, heatmap and Top apps were gone. The shared detail area was a
+`ViewThatFits` with a `minHeight: 0` frame; the menu bar window offers no height, so it
+picked the scrolling variant at 1 point tall. The popup is now laid out by `PopupLayout`
+(Sources/TypeStats/PopupView.swift): pinned top, a scrolling detail area, pinned footer.
+It takes its size from the 580-point detail height and the screen cap, never from the height
+the window offers. See [Views](../docs/run.md#views) for the unchanged display contract.
 
 ## Checks
 
-Focused unit tests cover dimensions, multiple apps, live counts, rollover without
-an event, flush/reopen parity, legacy coverage, empty weeks, tied peaks and shade edges.
-A deliberately broken render mapping failed the full project check at heatmap-probe.
-The new render check compares all 168 cell centres in both the popup and shared image,
-including zero, the four positive shades, future cells and an unflushed hour.
-Native-window screenshots prove that all eight apps can be reached by scrolling.
-Final full-check and exact-file receipts are retained in the assigned task data folder.
-
-## Methods used
-
-- review: traced saved, live and rollover aggregation before checking real render output.
-- boundary-discipline: the core snapshot decides future cells, coverage and peak ties; both views share it and choose the palette for their appearance.
-
-## Friction
-
-ImageRenderer omits the native scrolling app list. Native window captures and real wheel
-events proved reachability instead. Test binaries need a persistent foreground session;
-a short-lived shell killed earlier copies before Peekaboo could resolve their PIDs.
-Peekaboo's negative-coordinate parsing and window move were unreliable, so the final
-scroll proof targeted the exact test window through CoreGraphics and window-id capture.
-
-## Harness impact
-
-Added heatmap-check and its stdlib-only PNG pixel probe to the full check. Added the
-no-tap-only dark-snapshot seam for dark popup/window proof. Test data and receipts reside
-outside the worktree through ignored .po/tmp and proof.json symlinks.
+`scripts/popup-real-check.sh` (in `.po/check.sh`) opens the real popup from the status item
+of the bundled app, presses Today, 7 days and 30 days, and requires one window frame, a detail
+area of at least 400 pt, and the chart, heatmap, Top apps and footer text in a window
+screenshot, on a tall screen and with `--screen-height 700`. Against the 0.1.3 source it
+fails: the window is 360x306 and the detail area 1 pt tall. The old hosting-window checks
+passed on that source because a hosting window sizes differently.
 
 ## Limits
 
-The native menu-bar opening and physical event tap were not driven; all renders and
-scrolling used isolated seeded data with --no-tap. ImageRenderer popup PNGs omit the
-scrolling Top apps rows; live captures show them.
-
-## Review
-
-Intent: make the most active typing hours visible in the 7-day popup and shared image
-using actual hourly counts and clear shading.
-Act on: the original heatmap slot let the legacy coverage note overlap Top apps. Increased
-the slot, fixed row-label height, adjusted share scale and inspected native and exported
-renders. A repeated peak must not imply a unique winner; name the first and state the
-total number tied. A stale day at midnight must not double-count pending hours; refresh
-the day before building the snapshot and test before and after flush/reopen.
-Consider: see [Views](../docs/run.md#views) for the current popup sizing and scrolling contract.
-Noted: native event-tap and actual menu-opening proof remain outside this seeded feature check.
-Dismissed: a storage migration or inferred hours would add risk and fabricate evidence.
+The check moves the real mouse and needs Accessibility and Screen Recording permission,
+cliclick and a status item that is not hidden behind the notch.

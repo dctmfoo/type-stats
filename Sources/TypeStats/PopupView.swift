@@ -10,14 +10,15 @@ struct PopupView: View {
     @State var showExcluded: Bool
     static let width: CGFloat = 360
     static let topLimit = 8
-    /// The chart and app region keeps one size across periods. The week trades part of
-    /// its app-list viewport for the heatmap, so period switches never move the popup.
     static let chartHeight: CGFloat = 110
     static let noteHeight: CGFloat = 28
     static let appRowHeight: CGFloat = 28
     static let appListHeight = CGFloat(topLimit) * appRowHeight + 8
-    // The week replaces the chart note slot and uses the remaining space above a scrolling list.
-    static let weekAppListHeight = appListHeight - WeeklyActivityView.height - 12 + noteHeight + 6
+    /// The 7-day view adds the heatmap in place of the chart note, so it is taller than the
+    /// other periods and its Top apps keep their full height.
+    static let weekChromeHeight: CGFloat = 650
+    /// Room kept between the 7-day popup and the bottom of the visible screen.
+    static let screenMargin: CGFloat = 8
     static let totalFont = Font.system(size: 28, weight: .bold, design: .rounded)
     static let keysColor = Color.accentColor
 
@@ -227,8 +228,16 @@ struct PopupView: View {
                 .accessibilityIdentifier("excludedApps")
             }
             appList(top, empty: empty)
-                .frame(height: period == .week ? Self.weekAppListHeight : Self.appListHeight, alignment: .top)
+                .frame(height: appListViewport, alignment: .top)
         }
+    }
+
+    /// Top apps keep their full height. Only the 7-day list, which sits under the heatmap,
+    /// shrinks (to a scrolling viewport of at least one row) when the popup would not fit on screen.
+    private var appListViewport: CGFloat {
+        guard period == .week else { return Self.appListHeight }
+        let room = controller.visibleScreenHeight - Self.weekChromeHeight - Self.screenMargin
+        return min(Self.appListHeight, max(Self.appRowHeight + 8, room))
     }
 
     @ViewBuilder private func appList(_ top: [AppCount], empty: String) -> some View {

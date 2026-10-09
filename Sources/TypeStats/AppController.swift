@@ -290,6 +290,11 @@ final class AppController {
         }
     }
 
+    /// Height of the screen area the popup can use; `--screen-height` replaces the real one.
+    var visibleScreenHeight: CGFloat {
+        options.screenHeight.map { CGFloat($0) } ?? NSScreen.main?.visibleFrame.height ?? .greatestFiniteMagnitude
+    }
+
     /// Popup contents in a normal, capturable window (`--show-window`).
     private func showWindow() {
         let w = window ?? makeWindow()

@@ -8,8 +8,8 @@ Zero is grey. Positive counts use four blue quartiles of the busiest shown cell.
 Future hours today have outlines, and keys saved without an hour remain unplaced.
 Today's live counts are included once; pending counts from an ended day are included
 once before and after a flush. Past hourly reads are cached without changing storage.
-The popup keeps its dimensions by scrolling the weekly Top apps list. Other periods
-keep their existing layout and images.
+The 7-day popup grows by the heatmap and keeps the full Top apps list, capped at the visible
+screen height. The heatmap has light and dark palettes. Other periods keep their layout.
 
 ## Checks
 
@@ -45,7 +45,7 @@ outside the worktree through ignored .po/tmp and proof.json symlinks.
 The existing store combines repeated daylight-saving hours into one local-hour bucket.
 Historical hourly gaps are reported, never inferred. The native menu-bar opening and
 physical event tap were not driven; all renders and scrolling used isolated seeded data
-with --no-tap. ImageRenderer popup PNGs omit Top apps; live captures show those rows.
+with --no-tap. ImageRenderer popup PNGs omit the scrolling Top apps rows; live captures show them.
 
 ## Review
 
@@ -56,6 +56,6 @@ the slot, fixed row-label height, adjusted share scale and inspected native and 
 renders. A repeated peak must not imply a unique winner; name the first and state the
 total number tied. A stale day at midnight must not double-count pending hours; refresh
 the day before building the snapshot and test before and after flush/reopen.
-Consider: weekly Top apps now scrolls within the existing popup dimensions.
+Consider: the 7-day popup is taller than the other periods; Top apps scroll only past the visible screen height.
 Noted: native event-tap and actual menu-opening proof remain outside this seeded feature check.
 Dismissed: a storage migration or inferred hours would add risk and fabricate evidence.

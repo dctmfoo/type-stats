@@ -42,6 +42,9 @@ public struct LaunchOptions: Equatable, Sendable {
     /// each app with no hour, as counts saved before hourly tracking look (today's view then
     /// shows the "no hour" note).
     public var seedNoHour: [(bundleID: String, count: Int)] = []
+    /// `--screen-height <points>`: the visible screen height the 7-day popup is capped to,
+    /// instead of the real screen's, so a check gets the same layout on any display.
+    public var screenHeight: Double?
     /// `--measure-views`: open the popup in a window that follows its content size (as the
     /// menu bar window does), switch through every period while counts change, print each
     /// size and window frame, and exit.
@@ -154,6 +157,10 @@ public struct LaunchOptions: Equatable, Sendable {
                 guard let n = Int(spec), n > 0 else { throw ParseError.badSpec(spec) }
                 o.dumpHistory = n
             case "--seed-nohour": o.seedNoHour = try parseKeys(try value("--seed-nohour"))
+            case "--screen-height":
+                let spec = try value("--screen-height")
+                guard let n = Double(spec), n > 0 else { throw ParseError.badSpec(spec) }
+                o.screenHeight = n
             case "--measure-views": o.measureViews = true
             case "--share-cards": o.shareCards = URL(fileURLWithPath: try value("--share-cards"), isDirectory: true)
             case "--share-copy":
@@ -265,7 +272,7 @@ public struct LaunchOptions: Equatable, Sendable {
             && a.at == b.at && a.dumpHours == b.dumpHours && a.dumpHistory == b.dumpHistory
             && a.dumpWPM == b.dumpWPM && a.loginStatus == b.loginStatus && a.view == b.view
             && a.seedNoHour.map { "\($0.bundleID):\($0.count)" } == b.seedNoHour.map { "\($0.bundleID):\($0.count)" }
-            && a.measureViews == b.measureViews && a.shareCards == b.shareCards
+            && a.screenHeight == b.screenHeight && a.measureViews == b.measureViews && a.shareCards == b.shareCards
             && a.shareCopy == b.shareCopy && a.pasteboard == b.pasteboard && a.shareSave == b.shareSave
             && a.pasteboardRead == b.pasteboardRead && a.pasteboardPNG == b.pasteboardPNG
             && a.sharePanel == b.sharePanel && a.exclude == b.exclude && a.include == b.include

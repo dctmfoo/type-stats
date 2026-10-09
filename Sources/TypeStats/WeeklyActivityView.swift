@@ -7,14 +7,26 @@ struct WeeklyActivityView: View {
     var scale: CGFloat = 1
     static let height: CGFloat = 170
 
-    // Zero is neutral grey. Every positive step is blue, with a bright cyan peak.
-    static let shades: [Color] = [
+    @Environment(\.colorScheme) private var scheme
+
+    // Zero is neutral grey and every positive step is blue. Dark mode brightens toward the
+    // peak; light mode darkens toward it, so the busiest hour always stands out most.
+    static let darkShades: [Color] = [
         Color(red: 0.16, green: 0.18, blue: 0.22),
         Color(red: 0.15, green: 0.32, blue: 0.51),
         Color(red: 0.16, green: 0.46, blue: 0.72),
         Color(red: 0.15, green: 0.59, blue: 0.88),
         Color(red: 0.22, green: 0.73, blue: 1.00)
     ]
+    static let lightShades: [Color] = [
+        Color(red: 0.86, green: 0.87, blue: 0.90),
+        Color(red: 0.74, green: 0.85, blue: 0.97),
+        Color(red: 0.50, green: 0.72, blue: 0.93),
+        Color(red: 0.25, green: 0.52, blue: 0.86),
+        Color(red: 0.08, green: 0.33, blue: 0.68)
+    ]
+
+    private var shades: [Color] { scheme == .dark ? Self.darkShades : Self.lightShades }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 4 * scale) {
@@ -46,11 +58,11 @@ struct WeeklyActivityView: View {
             .font(.system(size: 9 * scale)).foregroundStyle(.secondary)
             HStack(spacing: 4 * scale) {
                 Text("0")
-                RoundedRectangle(cornerRadius: 2 * scale).fill(Self.shades[0])
+                RoundedRectangle(cornerRadius: 2 * scale).fill(shades[0])
                     .frame(width: 9 * scale, height: 9 * scale)
                 Text("Less")
                 ForEach(1..<5, id: \.self) { step in
-                    RoundedRectangle(cornerRadius: 2 * scale).fill(Self.shades[step])
+                    RoundedRectangle(cornerRadius: 2 * scale).fill(shades[step])
                         .frame(width: 9 * scale, height: 9 * scale)
                 }
                 Text("More")
@@ -70,7 +82,7 @@ struct WeeklyActivityView: View {
         let shape = RoundedRectangle(cornerRadius: 1.5 * scale)
         switch cell {
         case .count(let keys):
-            shape.fill(Self.shades[WeeklyActivity.shadeStep(keys: keys, peak: activity.peakKeys)])
+            shape.fill(shades[WeeklyActivity.shadeStep(keys: keys, peak: activity.peakKeys)])
         case .future:
             shape.strokeBorder(.secondary.opacity(0.45), lineWidth: 0.5 * scale)
         }

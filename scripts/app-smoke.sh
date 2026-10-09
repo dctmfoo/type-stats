@@ -299,7 +299,7 @@ stop_app
 # week: two apps on an earlier day, nothing today
 DATA="$STEADY/week"; mkdir -p "$DATA"
 record_at 2026-10-01T10:00 --simulate-keys "$A:30,$B:10"
-launch --at "$STEADY_NOW" --view week --snapshot "$STEADY/week.png"
+launch --at "$STEADY_NOW" --view week --screen-height 5000 --snapshot "$STEADY/week.png"
 i=0; until [ -s "$STEADY/week.png" ]; do i=$((i + 1)); [ $i -le 50 ] || fail "week snapshot not rendered"; sleep 0.2; done
 stop_app
 # month: only today has counts (0 past days with data), one app
@@ -308,21 +308,31 @@ launch --at "$STEADY_NOW" --view month --snapshot "$STEADY/month.png" --simulate
 i=0; until [ -s "$STEADY/month.png" ]; do i=$((i + 1)); [ $i -le 50 ] || fail "month snapshot not rendered"; sleep 0.2; done
 stop_app
 today_size=$(png_size "$STEADY/today.png")
-for v in week month; do
-  [ "$(png_size "$STEADY/$v.png")" = "$today_size" ] \
-    || fail "popup size differs between views: today $today_size, $v $(png_size "$STEADY/$v.png")"
-done
-echo "PASS popup is the same size in all three views ($today_size px)"
+[ "$(png_size "$STEADY/month.png")" = "$today_size" ] \
+  || fail "popup size differs between views: today $today_size, month $(png_size "$STEADY/month.png")"
+# The 7-day view adds the heatmap (148 pt, 296 px at 2x) and keeps full-height Top apps.
+week_size="${today_size%x*}x$((${today_size#*x} + 296))"
+[ "$(png_size "$STEADY/week.png")" = "$week_size" ] \
+  || fail "7-day popup is $(png_size "$STEADY/week.png"), expected $week_size"
+echo "PASS popup is the same size for Today and 30 days ($today_size px) and 148 pt taller for 7 days ($week_size px)"
 
 # A live window that follows the popup's content size (like the menu bar window) switches
-# through every view while counts arrive; its fitting size and screen frame must never change.
+# through every view while counts arrive; its size and frame stay fixed within a view, and only 7 days is taller.
 DATA="$STEADY/live"; mkdir -p "$DATA"
 "$BIN" --data-dir "$DATA" --no-tap --at "$STEADY_NOW" --seed-nohour "$A:40" --simulate-keys "$B:5" \
-  --measure-views > "$STEADY/measure.txt" &
+  --screen-height 5000 --measure-views > "$STEADY/measure.txt" &
 i=0; while kill -0 $! 2>/dev/null; do i=$((i + 1)); [ $i -le 300 ] || { kill $!; fail "--measure-views did not finish"; }; sleep 0.1; done
 [ "$(wc -l < "$STEADY/measure.txt" | tr -d ' ')" = 9 ] || { cat "$STEADY/measure.txt"; fail "--measure-views did not report 9 steps"; }
-[ "$(cut -f2- "$STEADY/measure.txt" | sort -u | wc -l | tr -d ' ')" = 1 ] \
-  || { cat "$STEADY/measure.txt"; fail "popup size or window frame changed while switching views or counting"; }
-echo "PASS live popup keeps one size and position across 9 steps (width height x y w h: $(sed -n 1p "$STEADY/measure.txt" | cut -f2- | tr '\t' ' '))"
+[ "$(grep -v week "$STEADY/measure.txt" | cut -f2- | sort -u | wc -l | tr -d ' ')" = 1 ] \
+  || { cat "$STEADY/measure.txt"; fail "popup size or window frame changed while switching between Today and 30 days or counting"; }
+[ "$(grep week "$STEADY/measure.txt" | cut -f2- | sort -u | wc -l | tr -d ' ')" = 1 ] \
+  || { cat "$STEADY/measure.txt"; fail "7-day popup size or window frame changed while counting"; }
+other=$(grep -v week "$STEADY/measure.txt" | sed -n 1p | cut -f2-)
+week=$(grep week "$STEADY/measure.txt" | sed -n 1p | cut -f2-)
+[ "$(echo "$week" | cut -f1,3,4,5)" = "$(echo "$other" | cut -f1,3,4,5)" ] \
+  || { cat "$STEADY/measure.txt"; fail "7-day popup width or position differs from the other views"; }
+[ "$(echo "$week" | cut -f2)" -gt "$(echo "$other" | cut -f2)" ] \
+  || { cat "$STEADY/measure.txt"; fail "7-day popup is not taller than the other views"; }
+echo "PASS live popup keeps its size and position across 9 steps (width height x y w h: $(echo "$other" | tr '\t' ' '); 7 days: $(echo "$week" | tr '\t' ' '))"
 
 echo "PASS app-smoke"

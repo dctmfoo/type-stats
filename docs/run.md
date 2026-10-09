@@ -150,12 +150,14 @@ The popup opens on "Today" and has "Today | 7 days | 30 days" at the top.
   names the date and hour, or says how many hours tie. "Based on X of Y keys" appears
   when some keys have no hour. Repeated daylight-saving hours share their stored bucket.
 
-The popup is one fixed size for all three views (the same width, and a height that
-reserves room for the chart, the one-line "no hour" note and up to 8 app rows), so the
-menu bar window never resizes or moves when you switch views or counts tick. Fewer apps
-leave blank space under the list. The 7-day heatmap uses part of that reserved area;
-its Top apps list scrolls to reach all eight apps. Today and 30 days keep their full
-list area. Layout changes are not animated.
+The popup is 360 points wide in every view. Today and 30 days share one fixed height
+(room for the chart, the one-line "no hour" note and up to 8 app rows), so the menu bar
+window never resizes or moves while counts tick. Fewer apps leave blank space under the
+list. The 7-day view is taller: it adds the heatmap under By day and keeps the full Top
+apps height. When that would not fit the visible screen height, only the Top apps list
+shrinks, to a scrolling viewport of at least one row. The heatmap follows the system
+appearance (light greys and blues that darken toward the peak, or dark greys and blues
+that brighten); the shared image is always dark. Layout changes are not animated.
 
 ## Share
 The popup footer has a Share button next to Quit. Its menu works on the period being
@@ -265,7 +267,8 @@ earlier version is ignored (the feature is gone) and does not stop the store fro
 | `--at yyyy-MM-ddTHH:mm` | Freeze the app's clock at this local time: simulated events land on that day and hour, and "today" (popup and dumps) is that day |
 | `--view today\|week\|month` | Open the popup (and `--snapshot`) on that period |
 | `--seed-nohour "bundleId:n,..."` | Before launch, add n keys and n clicks to today for each app with no hour (as counts from before hourly tracking look), so Today shows its "no hour" note |
-| `--measure-views` | Open the popup in a borderless window that follows its content size (as the menu bar window does), switch through Today, 7 days, 30 days and Today again while counts arrive, print `step<TAB>fitting w<TAB>h<TAB>window x<TAB>y<TAB>w<TAB>h` after each, and exit. Every row must have the same numbers |
+| `--screen-height <points>` | Use this as the visible screen height when capping the 7-day popup, instead of the real screen's, so snapshots and `--measure-views` have the same layout on any display |
+| `--measure-views` | Open the popup in a borderless window that follows its content size (as the menu bar window does), switch through Today, 7 days, 30 days and Today again while counts arrive, print `step<TAB>fitting w<TAB>h<TAB>window x<TAB>y<TAB>w<TAB>h` after each, and exit. The Today and 30 days rows must all have the same numbers; the 7 days rows are taller by the heatmap |
 | `--share-copy image\|text --pasteboard <name>` | After simulating, copy the card or the line for `--view` to the NAMED pasteboard (never the general one; refused without `--pasteboard`) and exit |
 | `--share-save <path>` | After simulating, write the 2400x1260 card for `--view` to that path (no dialog) and exit |
 | `--pasteboard-read <name> [--pasteboard-png <path>]` | Print what a named pasteboard holds (`text`, `png`, `tiff` with pixel size) and release it, optionally saving the PNG; exit |

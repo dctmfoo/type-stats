@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
-"""Check real rendered cell colours against known fixture counts, using stdlib only."""
+"""Check real rendered cell colours against known fixture counts, using stdlib only.
+
+Usage: heatmap-probe.py dark:<png> light:<png> ... (the palette each image is drawn with)."""
 import struct
 import sys
 import zlib
@@ -38,7 +40,11 @@ def pixels(path):
     return width, height, lambda x, y: tuple(rows[y][x * bpp:x * bpp + 3])
 
 
-palette = [(41, 46, 56), (38, 82, 130), (41, 117, 184), (38, 150, 224), (56, 186, 255)]
+palettes = {
+    "dark": [(41, 46, 56), (38, 82, 130), (41, 117, 184), (38, 150, 224), (56, 186, 255)],
+    "light": [(219, 222, 230), (189, 217, 247), (128, 184, 237), (64, 133, 219), (20, 84, 173)],
+}
+palette = palettes["dark"]
 
 
 def shade(rgb):
@@ -54,7 +60,9 @@ for day, step in enumerate([1, 2, 2, 2, 3], 1):
     expected[day][9] = step
 expected[6] = [0] * 9 + [4, 1] + [None] * 13
 
-for path in sys.argv[1:]:
+for arg in sys.argv[1:]:
+    scheme, path = arg.split(":", 1)
+    palette = palettes[scheme]
     width, height, pixel = pixels(path)
     bands = []
     for y in range(height):
@@ -77,4 +85,4 @@ for path in sys.argv[1:]:
         y = band[len(band) // 2][0]
         actual = [shade(pixel(x, y)) for x in centres]
         assert actual == expected[day], f"{path}: row {day}: {actual}, expected {expected[day]}"
-    print(f"PASS {path}: all 168 cell centres match fixture shades and future mask")
+    print(f"PASS {scheme} {path}: all 168 cell centres match fixture shades and future mask")

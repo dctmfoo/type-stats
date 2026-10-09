@@ -6,9 +6,12 @@ even one real key differs from zero. Outlined cells mark today's future hours.
 The peak line gives a day and hour, with the number of ties when there is more than one.
 A "Based on X of Y keys" note reports older keys that have no saved hour.
 
-The popup stays 360 points wide and keeps its existing height across periods. Its weekly
-Top apps area scrolls to all eight apps. Today and 30 days keep their full app-list space.
-The weekly share image remains 2400x1260 pixels. Counting and storage are unchanged.
+The popup stays 360 points wide. Today and 30 days keep their height; the 7-day view is
+taller by the heatmap and keeps the full Top apps list, which scrolls only when the popup
+would not fit the visible screen height. The heatmap has a light palette (blues darkening
+toward the peak) and a dark one (blues brightening), following the system appearance; the
+shared image stays dark. The weekly share image remains 2400x1260 pixels. Counting and
+storage are unchanged.
 
 ## Verification
 

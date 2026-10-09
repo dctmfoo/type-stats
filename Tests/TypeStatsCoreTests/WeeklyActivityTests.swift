@@ -92,4 +92,12 @@ final class WeeklyActivityTests: XCTestCase {
         XCTAssertEqual(WeeklyActivity.hourRange(12), "12-1 pm")
         XCTAssertEqual(WeeklyActivity.hourRange(23), "11 pm-12 am")
     }
+
+    func testScreenHeightSeamParsesPositiveValuesOnly() throws {
+        XCTAssertEqual(try LaunchOptions.parse(["--screen-height", "700"]).screenHeight, 700)
+        XCTAssertNil(try LaunchOptions.parse([]).screenHeight)
+        XCTAssertThrowsError(try LaunchOptions.parse(["--screen-height", "0"]))
+        XCTAssertThrowsError(try LaunchOptions.parse(["--screen-height", "tall"]))
+        XCTAssertThrowsError(try LaunchOptions.parse(["--screen-height"]))
+    }
 }

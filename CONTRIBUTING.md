@@ -10,7 +10,7 @@ Thanks for helping. Bug reports, small fixes and focused features are all welcom
 
 ## Set up
 
-You need macOS 14 or later, Xcode with Swift 6 or later, and Python 3 (for the checks).
+See [Required local tools](docs/run.md#required-local-tools) for build and check prerequisites.
 
 ```sh
 swift build

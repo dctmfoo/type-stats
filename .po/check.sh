@@ -43,6 +43,8 @@ sh scripts/share-prototype-check.sh
 sh scripts/share-check.sh
 # Weekly heatmap: real hourly-store counts, shade thresholds, legacy coverage and future mask.
 sh scripts/heatmap-check.sh
+# Real menu bar popup: the status item opens it, every period keeps one frame and the full detail area.
+sh scripts/popup-real-check.sh
 # Excluded apps: excluded apps are never counted, the list persists, history is kept, popup marker.
 sh scripts/exclude-check.sh
 # Pause counting: nothing counted while paused, pause survives restart, popup and icon show it.

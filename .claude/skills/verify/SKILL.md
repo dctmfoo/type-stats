@@ -14,10 +14,10 @@ Keep every fixture, data dir and screenshot under `.po/tmp/`, in a fresh folder 
 2. Drive the behavior you changed in the real bundle (`sh scripts/bundle-app.sh` first).
    The test seams are the table in `docs/run.md` ("Test seams"); use it, do not copy it here.
    Start with `--data-dir .po/tmp/<fresh-name> --no-tap` so nothing touches the owner's data.
-3. Capture evidence and look at it. `--snapshot <png>` renders the popup without Screen
-   Recording permission; `--show-window` plus `screencapture -x -l <window id>` shows
-   scrolling lists, which `--snapshot` omits. Say plainly what could not be driven (the
-   real event tap, menu clicks) and leave it as a limit; do not claim it.
+3. Capture evidence and look at it. See [Test seams](../../../docs/run.md#test-seams-command-line-options)
+   for snapshot, hosting-window and real menu bar popup evidence limits.
+   Say plainly what could not be driven, such as the real event tap or menu clicks,
+   and leave it as a limit; do not claim it.
 4. If no script in `scripts/` fails when your change breaks, add one and call it from
    `.po/check.sh`. Show it fail once against a deliberately broken build.
 5. Clean up. Every copy you started must be gone: run

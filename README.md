@@ -5,7 +5,7 @@ per app, per hour and per day. It shows today, the last 7 days and the last 30 d
 your typing speed, and can share a summary card.
 
 It stores **counts only**. It never records which key you pressed, any text, or where you
-clicked, and nothing leaves your Mac.
+clicked. Your counts stay on your Mac.
 
 <p>
   <img src="docs/images/popup-today.png" alt="TypeStats popup showing today's keys, clicks, typing speed, keys per hour and top apps" width="300">
@@ -30,6 +30,12 @@ clicked, and nothing leaves your Mac.
 - **Excluded apps.** Never count a password manager or any other app you choose.
 - **Pause.** Stop counting for 15 minutes, an hour, or until you resume.
 - **Start at login.** One switch in the popup.
+- **App updates.** The footer shows your version or "Update available". Click it to open
+  App Updates with current and latest versions. "Check for Updates" checks again; when a
+  newer release is available, "Update from Homebrew" installs it and restarts TypeStats.
+  In-app updates require the Homebrew-installed copy; ZIP and source builds must be
+  replaced manually.
+  See [update requirements and restart behavior](docs/run.md#app-updates).
 
 ## Install
 
@@ -59,9 +65,10 @@ permission.
 - Never stored: key codes, characters, text, the time of a single press, or click positions.
   The pointer position is used once, to find the app under a click, and then dropped.
 - Keys typed into password fields are hidden from every app by macOS, so they are not counted.
-- Everything stays in `~/Library/Application Support/TypeStats/` on your Mac. TypeStats makes
-  no network requests; sharing only puts a card or a line on your clipboard or in a file you
-  choose.
+- Counts stay in `~/Library/Application Support/TypeStats/` on your Mac. Update checks request
+  only the published Homebrew cask from GitHub; no counts or app names are sent. A requested
+  update runs Homebrew, which downloads the release. Sharing puts a card or a line on your
+  clipboard or in a file you choose.
 
 Keys typed in a terminal count for the terminal app (Terminal, iTerm2, Ghostty, ...), not the
 program running inside it, because macOS reports the frontmost app.

@@ -41,10 +41,10 @@ Run the full check before you open a pull request:
 sh .po/check.sh
 ```
 
-It builds, runs the unit tests, bundles the app, runs every real-app check in `scripts/`
-(counting, persistence, history, share, excluded apps, pause) and makes sure no test copy of the
-app is left running. It launches the app several times and takes a few minutes. CI runs the
-build, the unit tests and a launch smoke on every pull request.
+It builds, runs the unit tests, bundles the app, runs the real-app checks listed in
+`.po/check.sh` and makes sure no test copy of the app is left running. It launches the app
+several times and takes a few minutes. CI runs the build, the unit tests and a launch smoke
+on every pull request.
 
 If you change behavior, add a unit test or extend a check in `scripts/` that fails without your
 change, and update `docs/run.md` when a command, an option or the behavior it describes changes.

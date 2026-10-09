@@ -44,6 +44,7 @@ struct PopupView: View {
             // A period switch must not animate the layout: no size or position change at all.
             .transaction { $0.animation = nil }
             .onAppear { controller.loginItem.refresh() }
+            .task { if !controller.testMode { await controller.update.checkIfNeeded() } }
             .onChange(of: controller.periodRequest) { _, request in
                 if let request { period = request }
             }
@@ -259,6 +260,11 @@ struct PopupView: View {
             Text("Counts and typing times only. No keys, text or click positions saved.")
                 .font(.caption2).foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
+            Button(controller.update.footerLabel) { controller.showUpdates() }
+                .font(.caption)
+                .foregroundStyle(controller.update.updateAvailable ? Color.accentColor : Color.secondary)
+                .buttonStyle(.plain)
+                .accessibilityIdentifier("appVersion")
             HStack {
                 Toggle("Start at login", isOn: Binding(get: { login.isOn }, set: { login.set($0) }))
                     .toggleStyle(SmallSwitchStyle())

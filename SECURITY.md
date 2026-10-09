@@ -17,7 +17,7 @@ You should get a first reply within a week.
 Anything that breaks the app's privacy promise is in scope, for example:
 
 - a key code, character, typed text or click position written to disk, logged or sent anywhere;
-- data leaving the Mac (TypeStats makes no network requests);
+- network activity outside the [documented privacy policy](README.md#privacy);
 - the event tap modifying or blocking events (it is listen-only);
 - counting while paused or in an excluded app.
 

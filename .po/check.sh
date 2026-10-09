@@ -45,6 +45,8 @@ sh scripts/share-check.sh
 sh scripts/exclude-check.sh
 # Pause counting: nothing counted while paused, pause survives restart, popup and icon show it.
 sh scripts/pause-check.sh
+# App Updates: states, errors, explicit brew arguments and replacement launch.
+sh scripts/update-check.sh
 # Seam coverage (every documented test seam is driven by a check or listed in .po/manual-seams.txt)
 # is part of the freshness check above. No test copy of the app is left running:
 sh scripts/leak-check.sh

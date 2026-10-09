@@ -7,9 +7,10 @@ final class SteadyTypingTests: XCTestCase {
     func testShortReplyDoesNotProduceSpeed() throws {
         let counter = try KeyCounter(store: CountStore(directory: makeTestDirectory()))
         let pipeline = KeyPressPipeline(counter: counter, frontmostApp: { terminal })
-        let base = EventClock.nowNanos() - 120_000_000_000
+        let base = EventClock.nowNanos()
         for i in 0..<20 {
             let event = CGEvent(keyboardEventSource: nil, virtualKey: 0, keyDown: true)!
+            event.flags = []
             event.timestamp = base + UInt64(i) * 500_000_000
             pipeline.handle(type: .keyDown, event: event)
         }
@@ -19,10 +20,10 @@ final class SteadyTypingTests: XCTestCase {
 }
 
 extension SteadyTypingTests {
-    private func event(_ code: CGKeyCode, flags: CGEventFlags = [], at seconds: Double = 0) -> CGEvent {
+    private func event(_ code: CGKeyCode, flags: CGEventFlags = [], at nanoseconds: UInt64 = 0) -> CGEvent {
         let event = CGEvent(keyboardEventSource: nil, virtualKey: code, keyDown: true)!
         event.flags = flags
-        event.timestamp = seconds > 0 ? UInt64(seconds * 1e9) : 0
+        event.timestamp = nanoseconds
         return event
     }
 
@@ -66,11 +67,12 @@ extension SteadyTypingTests {
         let directory = try makeTestDirectory()
         let counter = try KeyCounter(store: CountStore(directory: directory))
         let pipeline = KeyPressPipeline(counter: counter, frontmostApp: { terminal })
-        let base = Double(EventClock.nowNanos()) / 1e9 - 120
-        for i in 0...10 { pipeline.handle(type: .keyDown, event: event(0, at: base + Double(i))) }
+        // Whole seconds keep the exact 10-second qualification boundary representable.
+        let base = (EventClock.nowNanos() / 1_000_000_000 + 1) * 1_000_000_000
+        for i in 0...10 { pipeline.handle(type: .keyDown, event: event(0, at: base + UInt64(i) * 1_000_000_000)) }
         try counter.flush()
         XCTAssertEqual(counter.todayCounts[terminal.bundleID]?.burstCount, 11)
-        for i in 1...15 { pipeline.handle(type: .keyDown, event: event(i % 2 == 0 ? 117 : 51, at: base + 10 + Double(i) * 0.1)) }
+        for i in 1...15 { pipeline.handle(type: .keyDown, event: event(i % 2 == 0 ? 117 : 51, at: base + 10_000_000_000 + UInt64(i) * 100_000_000)) }
         XCTAssertEqual(counter.todayCounts[terminal.bundleID]?.burstCount, 0)
         XCTAssertEqual(counter.wpm, 0)
         try counter.flush()
@@ -79,20 +81,21 @@ extension SteadyTypingTests {
         XCTAssertEqual(reopened.todayCounts[terminal.bundleID]?.burstCount, 0)
         XCTAssertEqual(reopened.todayCounts[terminal.bundleID]?.activeSeconds ?? 0, 11.5, accuracy: 0.0001)
         // Deletes in a fresh stretch cannot erase already-qualified earlier writing.
-        for i in 0...10 { counter.record(terminal, kind: .typingCharacter, at: base + 100 + Double(i)) }
-        counter.record(terminal, kind: .backspace, at: base + 200)
+        let baseSeconds = Double(base) / 1e9
+        for i in 0...10 { counter.record(terminal, kind: .typingCharacter, at: baseSeconds + 100 + Double(i)) }
+        counter.record(terminal, kind: .backspace, at: baseSeconds + 200)
         XCTAssertEqual(counter.todayCounts[terminal.bundleID]?.burstCount, 11)
     }
 
     func testShortcutsAndNavigationKeepKeyCountButBreakSpeed() throws {
         let counter = try KeyCounter(store: CountStore(directory: makeTestDirectory()))
         let pipeline = KeyPressPipeline(counter: counter, frontmostApp: { terminal })
-        let base = Double(EventClock.nowNanos()) / 1e9 - 120
+        let base = EventClock.nowNanos()
         for i in 0..<30 {
             let code: CGKeyCode = i % 5 == 4 ? 123 : 0
-            pipeline.handle(type: .keyDown, event: event(code, at: base + Double(i)))
+            pipeline.handle(type: .keyDown, event: event(code, at: base + UInt64(i) * 1_000_000_000))
         }
-        for i in 30..<50 { pipeline.handle(type: .keyDown, event: event(8, flags: .maskCommand, at: base + Double(i))) }
+        for i in 30..<50 { pipeline.handle(type: .keyDown, event: event(8, flags: .maskCommand, at: base + UInt64(i) * 1_000_000_000)) }
         XCTAssertEqual(counter.total, 50)
         XCTAssertNil(counter.wpm)
     }

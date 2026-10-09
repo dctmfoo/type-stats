@@ -10,6 +10,8 @@ import TypeStatsCore
 final class KeyTap {
     private(set) var isRunning = false
     private(set) var permissionGranted = CGPreflightListenEventAccess()
+    /// The old instance stops accepting input while its replacement opens.
+    var isRelaunching = false
 
     @ObservationIgnored private let pipeline: KeyPressPipeline
     @ObservationIgnored private var port: CFMachPort?
@@ -50,6 +52,7 @@ final class KeyTap {
         case .tapDisabledByTimeout, .tapDisabledByUserInput:
             if let port { CGEvent.tapEnable(tap: port, enable: true) }
         default:
+            guard !isRelaunching else { return }
             pipeline.handle(type: type, isAutorepeat: isAutorepeat, location: location, time: time, kind: kind)
         }
     }

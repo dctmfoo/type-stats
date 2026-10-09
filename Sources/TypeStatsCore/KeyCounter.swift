@@ -27,6 +27,7 @@ public final class KeyCounter {
     /// history on every redraw, which is every key press while it shows 7 or 30 days, and past
     /// days only change when a flush writes to one, so they are read from the store once.
     @ObservationIgnored private var pastRows: [[String]: [(day: String, app: AppCount)]] = [:]
+    @ObservationIgnored private var pastHours: [String: [Int: HourCount]] = [:]
     /// Store reads made for past days (tests check the cache with it).
     @ObservationIgnored private(set) var pastRowFetches = 0
     @ObservationIgnored private let store: CountStore
@@ -129,7 +130,10 @@ public final class KeyCounter {
         }
         try store.save()
         // Unsaved counts from a day that already ended are now saved rows of a past day.
-        if pending.keys.contains(where: { $0.day != day }) { pastRows = [:] }
+        if pending.keys.contains(where: { $0.day != day }) {
+            pastRows = [:]
+            pastHours = [:]
+        }
         pending.removeAll()
         pendingNames.removeAll()
     }
@@ -179,6 +183,25 @@ public final class KeyCounter {
         return History(dayKeys: keys, rows: rows)
     }
 
+    /// Past days come from the store plus pending counts for days that ended. Today's
+    /// in-memory hours already include saved and pending counts, so use them only once.
+    public func weeklyActivity() throws -> WeeklyActivity {
+        rolloverIfNeeded()
+        let date = now()
+        let history = try history(days: 7)
+        let keys = history.days.map(\.day)
+        var hours: [String: [Int: HourCount]] = [:]
+        for past in keys where past != day {
+            if pastHours[past] == nil { pastHours[past] = try store.hours(day: past) }
+            hours[past] = pastHours[past]
+        }
+        for (bucket, tally) in pending where bucket.day != day && keys.contains(bucket.day) {
+            hours[bucket.day, default: [:]][bucket.hour, default: HourCount(hour: bucket.hour)].keys += tally.keys
+        }
+        hours[day] = todayHours
+        return WeeklyActivity(dayKeys: keys, hours: hours, totalKeys: history.totalKeys, now: date, calendar: calendar)
+    }
+
     /// Starts a fresh "today" when the local date changes.
     public func rolloverIfNeeded() {
         let current = DayKey.string(for: now(), calendar: calendar)
@@ -186,6 +209,7 @@ public final class KeyCounter {
         endTypingStretch()
         day = current
         pastRows = [:]
+        pastHours = [:]
         todayCounts = [:]
         todayHours = [:]
         try? reloadToday()

@@ -14,6 +14,7 @@ open .build/TypeStats.app      # launch; a keyboard icon appears in the menu bar
 sh scripts/app-smoke.sh        # real-app check (needs the bundle above)
 sh scripts/exclude-check.sh    # excluded-apps check (needs the bundle above)
 sh scripts/pause-check.sh      # pause counting check (needs the bundle above)
+sh scripts/heatmap-check.sh    # weekly cell/shade render check (needs the bundle above)
 sh .po/check.sh                # full project check (the full real-app check)
 sh scripts/install-app.sh      # build, quit any running copy, install to ~/Applications and open it
 sh scripts/readme-screenshots.sh   # render docs/images/ from made-up sample data
@@ -142,18 +143,27 @@ The popup opens on "Today" and has "Today | 7 days | 30 days" at the top.
 - 7 days / 30 days: totals for the period (today included, so 7 days is today and the
   6 days before), keys (bars) per day, and the top apps over the
   period. Days from before this version appear normally; only their hours are missing.
+- 7 days also shows "When you typed", seven dated rows by 24 local hours. Zero keys are
+  grey; positive counts use four blue shades at up to 25%, 50%, 75% and 100% of the
+  busiest shown hour. Even one key has a blue shade. Outlined cells mean today's future
+  hours, labelled "Not yet". The current hour includes typing so far. The peak line
+  names the date and hour, or says how many hours tie. "Based on X of Y keys" appears
+  when some keys have no hour. Repeated daylight-saving hours share their stored bucket.
 
 The popup is one fixed size for all three views (the same width, and a height that
 reserves room for the chart, the one-line "no hour" note and up to 8 app rows), so the
 menu bar window never resizes or moves when you switch views or counts tick. Fewer apps
-leave blank space under the list. Layout changes are not animated.
+leave blank space under the list. The 7-day heatmap uses part of that reserved area;
+its Top apps list scrolls to reach all eight apps. Today and 30 days keep their full
+list area. Layout changes are not animated.
 
 ## Share
 The popup footer has a Share button next to Quit. Its menu works on the period being
 viewed (Today, 7 days or 30 days):
 - Copy image: card A (big numbers, chart, top 3 apps, TypeStats footer) as a PNG on the
   clipboard (a TIFF too, for apps that only read that). The card is 1200x630 points
-  drawn at 2x, so 2400x1260 pixels.
+  drawn at 2x, so 2400x1260 pixels. The 7-day card also includes the same hourly heatmap
+  below its chart and top apps, using the same counts, colours, peak and coverage note.
 - Copy text: one line, e.g. "Today: 7,120 keys · 665 clicks · 58 wpm. Top: Xcode 3,840 ·
   Mail 1,215 · Chrome 960. via TypeStats" ("Last 7 days:" / "Last 30 days:" for the
   others). Numbers always use commas. With fewer than 3 apps it lists what exists; with no
@@ -249,6 +259,7 @@ earlier version is ignored (the feature is gone) and does not stop the store fro
 | `--simulate-self-clicks n` | Order a TypeStats window front without activating it, then feed n clicks at its centre with no app given, so the real under-pointer lookup attributes them (expected: `local.typestats.TypeStats`) |
 | `--hold-flush` | Keep simulated presses unsaved until quit (proves quit saves them) |
 | `--show-window` | Also show the popup contents in a normal window |
+| `--dark-snapshot` | With `--no-tap`, render snapshots and test windows in dark appearance; normal launches ignore it |
 | `--snapshot <png>` | Render the popup view to a PNG after launch, or App Updates when `--updates-window` is set |
 | `--simulate-typing "bundleId:keys:seconds,..."` | Feed timed key presses through the same pipeline: each segment spreads `keys` presses evenly over `seconds` (event timestamps, ending now); segments are separated by a 60 s idle pause. `A:300:60` gives about 60 wpm; segments under 10 seconds do not qualify |
 | `--at yyyy-MM-ddTHH:mm` | Freeze the app's clock at this local time: simulated events land on that day and hour, and "today" (popup and dumps) is that day |

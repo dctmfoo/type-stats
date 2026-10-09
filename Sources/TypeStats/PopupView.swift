@@ -10,13 +10,14 @@ struct PopupView: View {
     @State var showExcluded: Bool
     static let width: CGFloat = 360
     static let topLimit = 8
-    /// Every period reserves the same space for its chart, the "no hour" note and the app
-    /// list, so the popup keeps one size (and the menu bar window never resizes or is
-    /// re-anchored) when switching periods or when counts change.
+    /// The chart and app region keeps one size across periods. The week trades part of
+    /// its app-list viewport for the heatmap, so period switches never move the popup.
     static let chartHeight: CGFloat = 110
     static let noteHeight: CGFloat = 28
     static let appRowHeight: CGFloat = 28
     static let appListHeight = CGFloat(topLimit) * appRowHeight + 8
+    // The week replaces the chart note slot and uses the remaining space above a scrolling list.
+    static let weekAppListHeight = appListHeight - WeeklyActivityView.height - 12 + noteHeight + 6
     static let totalFont = Font.system(size: 28, weight: .bold, design: .rounded)
     static let keysColor = Color.accentColor
 
@@ -28,9 +29,10 @@ struct PopupView: View {
 
     var body: some View {
         let counter = controller.counter
+        let activity = period == .week ? try? counter.weeklyActivity() : nil
         let history = period == .today ? nil : try? counter.history(days: period.days)
         let topRows = history.map { counter.markExcluded(Array($0.apps.prefix(Self.topLimit))) } ?? counter.topApps(limit: Self.topLimit)
-        content(counter: counter, history: history, topRows: topRows)
+        content(counter: counter, history: history, topRows: topRows, activity: activity)
             // The Excluded apps page covers the normal contents, which keep their size, so
             // the popup never resizes when the page opens or closes.
             .opacity(showExcluded ? 0 : 1)
@@ -50,7 +52,7 @@ struct PopupView: View {
             }
     }
 
-    private func content(counter: KeyCounter, history: History?, topRows: [AppCount]) -> some View {
+    private func content(counter: KeyCounter, history: History?, topRows: [AppCount], activity: WeeklyActivity?) -> some View {
         VStack(alignment: .leading, spacing: 12) {
             PeriodPicker(selection: $period)
 
@@ -65,6 +67,13 @@ struct PopupView: View {
 
             if let history {
                 dayChart(history)
+                if period == .week {
+                    Group {
+                        if let activity { WeeklyActivityView(activity: activity) }
+                        else { Text("Hourly counts unavailable").font(.caption).foregroundStyle(.secondary) }
+                    }
+                    .frame(height: WeeklyActivityView.height, alignment: .top)
+                }
                 topApps(topRows, empty: "Nothing counted in the last \(period.days) days.")
             } else {
                 hourChart(counter)
@@ -187,7 +196,7 @@ struct PopupView: View {
             }
             .chartYAxis { AxisMarks(position: .leading, values: .automatic(desiredCount: 3)) }
             .frame(height: Self.chartHeight)
-            noteSlot {}
+            if period != .week { noteSlot {} }
         }
     }
 
@@ -217,38 +226,50 @@ struct PopupView: View {
                 .buttonStyle(.plain)
                 .accessibilityIdentifier("excludedApps")
             }
-            Group {
-                if top.isEmpty {
-                    Text(empty)
-                        .foregroundStyle(.secondary)
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
-                } else {
-                    Chart(top) { row in
-                        BarMark(x: .value("Keys", row.count), y: .value("App", row.name))
-                            .foregroundStyle(Self.keysColor)
-                            .annotation(position: .trailing, alignment: .leading) {
-                                HStack(spacing: 6) {
-                                    Label { Text(row.count, format: .number) } icon: { Image(systemName: "keyboard") }
-                                    Label { Text(row.clicks, format: .number) } icon: { Image(systemName: "cursorarrow.click") }
-                                    if row.excluded {
-                                        Text("excluded").italic()
-                                    } else if let wpm = row.wpm {
-                                        Text("\(wpm, format: .number.precision(.fractionLength(0))) wpm")
-                                    }
+            appList(top, empty: empty)
+                .frame(height: period == .week ? Self.weekAppListHeight : Self.appListHeight, alignment: .top)
+        }
+    }
+
+    @ViewBuilder private func appList(_ top: [AppCount], empty: String) -> some View {
+        if period == .week {
+            ScrollView { appChart(top, empty: empty) }
+        } else {
+            appChart(top, empty: empty)
+        }
+    }
+
+    private func appChart(_ top: [AppCount], empty: String) -> some View {
+        Group {
+            if top.isEmpty {
+                Text(empty)
+                    .foregroundStyle(.secondary)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+            } else {
+                Chart(top) { row in
+                    BarMark(x: .value("Keys", row.count), y: .value("App", row.name))
+                        .foregroundStyle(Self.keysColor)
+                        .annotation(position: .trailing, alignment: .leading) {
+                            HStack(spacing: 6) {
+                                Label { Text(row.count, format: .number) } icon: { Image(systemName: "keyboard") }
+                                Label { Text(row.clicks, format: .number) } icon: { Image(systemName: "cursorarrow.click") }
+                                if row.excluded {
+                                    Text("excluded").italic()
+                                } else if let wpm = row.wpm {
+                                    Text("\(wpm, format: .number.precision(.fractionLength(0))) wpm")
                                 }
-                                .labelStyle(CompactLabelStyle())
-                                .font(.caption).monospacedDigit().foregroundStyle(.secondary)
-                                .fixedSize()
                             }
-                    }
-                    .chartXAxis(.hidden)
-                    // Room on the right of the longest bar for its label.
-                    .chartXScale(domain: 0...(Double(max(top.first?.count ?? 1, 1)) * 2.3))
-                    // Rows keep their height; fewer apps leave the rest of the list empty.
-                    .frame(height: CGFloat(top.count) * Self.appRowHeight + 8)
+                            .labelStyle(CompactLabelStyle())
+                            .font(.caption).monospacedDigit().foregroundStyle(.secondary)
+                            .fixedSize()
+                        }
                 }
+                .chartXAxis(.hidden)
+                // Room on the right of the longest bar for its label.
+                .chartXScale(domain: 0...(Double(max(top.first?.count ?? 1, 1)) * 2.3))
+                // Rows keep their height; fewer apps leave the rest of the list empty.
+                .frame(height: CGFloat(top.count) * Self.appRowHeight + 8)
             }
-            .frame(height: Self.appListHeight, alignment: .top)
         }
     }
 

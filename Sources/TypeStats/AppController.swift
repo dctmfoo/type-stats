@@ -82,6 +82,7 @@ final class AppController {
         runSimulation()
         if options.shareCopy != nil || options.shareSave != nil { runShareSeam() }
         if !options.noTap { tap.start() }
+        if options.noTap && options.darkSnapshot { NSApp.appearance = NSAppearance(named: .darkAqua) }
         if options.showWindow { showWindow() }
         if options.measureViews { measureViews() }
         if options.simulateSelfClicks > 0 { simulateSelfClicks(options.simulateSelfClicks) }
@@ -352,7 +353,7 @@ final class AppController {
             else { PopupView(controller: self, period: options.view, showExcluded: options.excludedPage) }
         }
             .background(Color(nsColor: .windowBackgroundColor))
-            .environment(\.colorScheme, .light)
+            .environment(\.colorScheme, options.noTap && options.darkSnapshot ? .dark : .light)
         let renderer = ImageRenderer(content: view)
         renderer.scale = 2
         guard let image = renderer.cgImage,

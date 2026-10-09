@@ -11,6 +11,8 @@ public struct LaunchOptions: Equatable, Sendable {
     public var holdFlush = false
     /// Render a view without Screen Recording permission; see docs/run.md for test options.
     public var snapshot: URL?
+    /// With --no-tap, render snapshots and test windows in dark appearance.
+    public var darkSnapshot = false
     /// `--simulate-keys "bundleId:n,bundleId:n"`
     public var simulateKeys: [(bundleID: String, count: Int)] = []
     /// `--simulate-text "bundleId:text"`: one key press per character.
@@ -132,6 +134,7 @@ public struct LaunchOptions: Equatable, Sendable {
             case "--no-tap": o.noTap = true
             case "--hold-flush": o.holdFlush = true
             case "--snapshot": o.snapshot = URL(fileURLWithPath: try value("--snapshot"))
+            case "--dark-snapshot": o.darkSnapshot = true
             case "--simulate-keys": o.simulateKeys = try parseKeys(try value("--simulate-keys"))
             case "--simulate-clicks": o.simulateClicks = try parseKeys(try value("--simulate-clicks"))
             case "--simulate-self-clicks":
@@ -253,6 +256,7 @@ public struct LaunchOptions: Equatable, Sendable {
 
     public static func == (a: LaunchOptions, b: LaunchOptions) -> Bool {
         a.dataDir == b.dataDir && a.showWindow == b.showWindow && a.dumpCounts == b.dumpCounts
+            && a.darkSnapshot == b.darkSnapshot
             && a.noTap == b.noTap && a.holdFlush == b.holdFlush && a.snapshot == b.snapshot
             && a.simulateKeys.map { "\($0.bundleID):\($0.count)" } == b.simulateKeys.map { "\($0.bundleID):\($0.count)" }
             && a.simulateText?.bundleID == b.simulateText?.bundleID && a.simulateText?.text == b.simulateText?.text

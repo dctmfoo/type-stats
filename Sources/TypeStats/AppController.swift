@@ -364,7 +364,7 @@ final class AppController {
             for period in [StatsPeriod.week, .today, .month, .week, .month, .today] {
                 self.periodRequest = period
                 await report("switch-\(period.rawValue)")
-                // Live counts arrive (a new app each time, so the app list grows past its limit).
+                // Grow past the visible row limit to exercise the popup's fixed size.
                 extra += 1
                 for app in 0..<2 {
                     for _ in 0..<(40 * extra) {

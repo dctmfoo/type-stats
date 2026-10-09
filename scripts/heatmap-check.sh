@@ -50,12 +50,12 @@ popup() {
 size() { sips -g pixelWidth -g pixelHeight "$1" | awk '/pixel/ {printf "%sx", $2}' | sed 's/x$//'; }
 # Light is the default appearance; the popup follows it.
 for view in today week month; do
-  popup popup-$view-dark "$view" --dark-snapshot --screen-height 5000
-  popup popup-$view-light "$view" --screen-height 5000
-  popup popup-$view-capped "$view" --screen-height 700
-  popup popup-$view-small "$view" --screen-height 500
-  popup popup-$view-banners "$view" --popup-banners --screen-height 875
-  popup popup-$view-banners-full "$view" --popup-banners --screen-height 5000
+  popup "popup-$view-dark" "$view" --dark-snapshot --screen-height 5000
+  popup "popup-$view-light" "$view" --screen-height 5000
+  popup "popup-$view-capped" "$view" --screen-height 700
+  popup "popup-$view-small" "$view" --screen-height 500
+  popup "popup-$view-banners" "$view" --popup-banners --screen-height 875
+  popup "popup-$view-banners-full" "$view" --popup-banners --screen-height 5000
 done
 python3 scripts/heatmap-probe.py dark:"$W/popup-week-dark.png" light:"$W/popup-week-light.png" dark:"$W/share-week.png" || fail 'grid or shade mismatch'
 swift scripts/ocr.swift "$W/share-week.png" > "$W/share.txt"

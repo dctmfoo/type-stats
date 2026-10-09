@@ -52,11 +52,12 @@ grep -q 'Based on 704 of 804 keys' "$W/share.txt" || fail 'coverage note missing
 grep -q 'Peak Tue 29, 4-5 pm' "$W/share.txt" || fail 'peak label missing or wrong'
 grep -q 'Not yet' "$W/share.txt" || fail 'future-hour legend missing'
 # The 7-day popup is 296 px (148 pt) taller than the other views, with full-height Top apps,
-# and only shrinks to a scrolling list when the visible screen height is smaller.
+# and only the Top apps list shrinks (the footer stays) when the visible screen height is smaller.
 today=$(cat scripts/popup-size.txt)
 week_height=$((${today#*x} + 296))
 [ "$(size "$W/popup-week-dark.png")" = "${today%x*}x$week_height" ] || fail "7-day popup is $(size "$W/popup-week-dark.png"), expected ${today%x*}x$week_height"
 [ "$(size "$W/popup-week-light.png")" = "${today%x*}x$week_height" ] || fail '7-day light popup size differs from dark'
-[ "$(size "$W/popup-week-capped.png")" = "${today%x*}x1383" ] || fail "7-day popup on a 700 pt screen is $(size "$W/popup-week-capped.png"), expected ${today%x*}x1383"
+[ "$(size "$W/popup-week-capped.png")" = "${today%x*}x1384" ] || fail "7-day popup on a 700 pt screen is $(size "$W/popup-week-capped.png"), expected ${today%x*}x1384"
+swift scripts/ocr.swift "$W/popup-week-capped.png" | grep -q Quit || fail 'capped 7-day popup lost its footer'
 [ "$(sips -g pixelWidth -g pixelHeight "$W/share-week.png" | awk '/pixel/ {printf "%sx", $2}' | sed 's/x$//')" = '2400x1260' ] || fail 'share size changed'
 echo "PASS heatmap: 7x24 cells in light and dark, full-height Top apps capped to the screen, four blue steps, zero and future cells, pending count, coverage and peak; renders in $W"

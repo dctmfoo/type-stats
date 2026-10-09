@@ -14,10 +14,7 @@ struct PopupView: View {
     static let noteHeight: CGFloat = 28
     static let appRowHeight: CGFloat = 28
     static let appListHeight = CGFloat(topLimit) * appRowHeight + 8
-    /// The 7-day view adds the heatmap in place of the chart note, so it is taller than the
-    /// other periods and its Top apps keep their full height.
-    static let weekChromeHeight: CGFloat = 650
-    /// Room kept between the 7-day popup and the bottom of the visible screen.
+    /// Room kept between the popup and the bottom of the visible screen.
     static let screenMargin: CGFloat = 8
     static let totalFont = Font.system(size: 28, weight: .bold, design: .rounded)
     static let keysColor = Color.accentColor
@@ -34,6 +31,9 @@ struct PopupView: View {
         let history = period == .today ? nil : try? counter.history(days: period.days)
         let topRows = history.map { counter.markExcluded(Array($0.apps.prefix(Self.topLimit))) } ?? counter.topApps(limit: Self.topLimit)
         content(counter: counter, history: history, topRows: topRows, activity: activity)
+            // The 7-day view is taller than the other periods (it adds the heatmap). If it would
+            // not fit the screen, the scrolling Top apps list gives up height, never the footer.
+            .frame(maxHeight: controller.visibleScreenHeight - Self.screenMargin, alignment: .top)
             // The Excluded apps page covers the normal contents, which keep their size, so
             // the popup never resizes when the page opens or closes.
             .opacity(showExcluded ? 0 : 1)
@@ -228,16 +228,9 @@ struct PopupView: View {
                 .accessibilityIdentifier("excludedApps")
             }
             appList(top, empty: empty)
-                .frame(height: appListViewport, alignment: .top)
+                .frame(minHeight: period == .week ? Self.appRowHeight + 8 : Self.appListHeight,
+                       idealHeight: Self.appListHeight, maxHeight: Self.appListHeight, alignment: .top)
         }
-    }
-
-    /// Top apps keep their full height. Only the 7-day list, which sits under the heatmap,
-    /// shrinks (to a scrolling viewport of at least one row) when the popup would not fit on screen.
-    private var appListViewport: CGFloat {
-        guard period == .week else { return Self.appListHeight }
-        let room = controller.visibleScreenHeight - Self.weekChromeHeight - Self.screenMargin
-        return min(Self.appListHeight, max(Self.appRowHeight + 8, room))
     }
 
     @ViewBuilder private func appList(_ top: [AppCount], empty: String) -> some View {

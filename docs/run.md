@@ -4,6 +4,9 @@
 - macOS 14 or later
 - Xcode with command line tools selected (`xcode-select -p`); Swift 6 or later
 - Python 3 (checks only)
+- For `scripts/popup-real-check.sh` and the full project check, cliclick plus
+  Accessibility and Screen Recording permission for the terminal. The check moves the
+  mouse and needs the test app's status item visible, not hidden behind the notch.
 
 ## Commands (from the project folder)
 ```sh
@@ -275,7 +278,7 @@ earlier version is ignored (the feature is gone) and does not stop the store fro
 | `--view today\|week\|month` | Open the popup (and `--snapshot`) on that period |
 | `--seed-nohour "bundleId:n,..."` | Before launch, add n keys and n clicks to today for each app with no hour (as counts from before hourly tracking look), so Today shows its "no hour" note |
 | `--screen-height <points>` | Use this as the visible screen height when capping the shared popup, instead of the real screen's, so snapshots and `--measure-views` have the same layout on any display |
-| `--measure-views` | Open the popup in a borderless window that follows its content size (as the menu bar window does), exercise every directed pair of periods while counts arrive and app rows cross the eight-row limit, print `step<TAB>fitting w<TAB>h<TAB>window x<TAB>y<TAB>w<TAB>h` at all 13 steps, and exit. Every row must have identical size and window frame numbers, including on screen-capped layouts |
+| `--measure-views` | Open the popup in a borderless hosting window that follows its content size, exercise every directed pair of periods while counts arrive and app rows cross the eight-row limit, print `step<TAB>fitting w<TAB>h<TAB>window x<TAB>y<TAB>w<TAB>h` at all 13 steps, and exit. Every row must have identical size and window frame numbers, including on screen-capped layouts |
 | `--share-copy image\|text --pasteboard <name>` | After simulating, copy the card or the line for `--view` to the NAMED pasteboard (never the general one; refused without `--pasteboard`) and exit |
 | `--share-save <path>` | After simulating, write the 2400x1260 card for `--view` to that path (no dialog) and exit |
 | `--pasteboard-read <name> [--pasteboard-png <path>]` | Print what a named pasteboard holds (`text`, `png`, `tiff` with pixel size) and release it, optionally saving the PNG; exit |
@@ -313,12 +316,19 @@ The uncapped popup's expected pixel size in every period with the test banner (w
 height at 2x) is `scripts/popup-size.txt`, read by `scripts/share-check.sh`,
 `scripts/share-prototype-check.sh` and `scripts/heatmap-check.sh`.
 The steady-popup smoke and heatmap checks require identical snapshot sizes and identical
-live window frames across every period, including screen-capped layouts. They use a hosting
-window, which does not size like the menu bar window did when the detail area collapsed, so
-`scripts/popup-real-check.sh` also opens the real popup from the status item (cliclick, and
-Accessibility plus Screen Recording permission for the terminal), switches Today, 7 days and
-30 days through its buttons, and requires one window frame, a detail area at least 400 pt
-tall and the chart, heatmap, Top apps and footer text on screen, on a tall and a 700 pt screen.
+live window frames across every period, including screen-capped layouts. Hosting-window
+checks do not prove the real menu bar popup's sizing. `scripts/popup-real-check.sh` opens
+that popup from the status item and switches Today, 7 days and 30 days through its buttons.
+On the real display it requires one window frame across periods, a detail area at least
+400 points tall, and chart, weekly heatmap, Top apps and footer text in window screenshots.
+The display must be tall enough for those checks. With `--screen-height 700`, it requires
+one frame across periods, a 692-point popup, a detail area at least 200 points tall, and
+chart and footer text. Top apps and heatmap text are checked only on the tall display.
+See [Required local tools](#required-local-tools) for prerequisites.
+Without Screen Recording permission, `screencapture` can fail with "could not create image".
+`--snapshot` can render without that permission, but does not prove the real menu bar
+popup's layout or show its scrolling app rows. `--show-window` allows captures of those rows in a
+hosting window; use the real popup check for menu bar sizing evidence.
 `kill -TERM <pid>` quits the app normally (counts are saved).
 
 ## Smoke
@@ -331,6 +341,3 @@ sh scripts/bundle-app.sh
 mkdir -p .po/tmp/freshness-data
 .build/TypeStats.app/Contents/MacOS/TypeStats --data-dir "$PWD/.po/tmp/freshness-data" --no-tap --dump-counts
 ```
-
-If the terminal lacks Screen Recording permission, `screencapture` fails with
-"could not create image"; use `--snapshot` instead.

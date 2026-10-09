@@ -336,8 +336,8 @@ final class AppController {
         return w
     }
 
-    /// Test seam (`--measure-views`): a window that follows the popup's content size (as the
-    /// menu bar window does), switched through every period while counts change. Prints
+    /// Test seam (`--measure-views`): a hosting window that follows the popup's content
+    /// size, switched through every period while counts change. Prints
     /// `label<TAB>fitting w<TAB>h<TAB>window x<TAB>y<TAB>w<TAB>h` per step, then quits.
     private func measureViews() {
         let host = NSHostingController(rootView: PopupView(controller: self, period: .today))

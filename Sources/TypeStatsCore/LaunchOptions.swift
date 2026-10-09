@@ -90,6 +90,13 @@ public struct LaunchOptions: Equatable, Sendable {
     /// `--no-test-banner`: in test mode, leave the "Key capture off (test mode)" line out of the
     /// popup (for screenshots).
     public var noTestBanner = false
+    /// Update verification seams. Overrides and actions are accepted only with --no-tap.
+    public var updateVersion: String?
+    public var updateCask: URL?
+    public var updateBrew: URL?
+    public var updatesWindow = false
+    public var performUpdate = false
+    public var updateRelaunchReady: URL?
 
     public struct TypingSegment: Equatable, Sendable {
         public let bundleID: String
@@ -180,6 +187,12 @@ public struct LaunchOptions: Equatable, Sendable {
                 guard let n = Double(spec), n >= 0 else { throw ParseError.badSpec(spec) }
                 o.resumeAfter = n
             case "--dump-pause": o.dumpPause = true
+            case "--update-version": o.updateVersion = try value("--update-version")
+            case "--update-cask": o.updateCask = URL(fileURLWithPath: try value("--update-cask"))
+            case "--update-brew": o.updateBrew = URL(fileURLWithPath: try value("--update-brew"))
+            case "--updates-window": o.updatesWindow = true
+            case "--perform-update": o.performUpdate = true
+            case "--update-relaunch-ready": o.updateRelaunchReady = URL(fileURLWithPath: try value("--update-relaunch-ready"))
             case "--no-test-banner": o.noTestBanner = true
             case "--ready-file": o.readyFile = URL(fileURLWithPath: try value("--ready-file"))
             case "--view":
@@ -255,6 +268,9 @@ public struct LaunchOptions: Equatable, Sendable {
             && a.sharePanel == b.sharePanel && a.exclude == b.exclude && a.include == b.include
             && a.dumpExcluded == b.dumpExcluded && a.excludedPage == b.excludedPage
             && a.pause == b.pause && a.resume == b.resume && a.dumpPause == b.dumpPause
+            && a.updateVersion == b.updateVersion && a.updateCask == b.updateCask && a.updateBrew == b.updateBrew
+            && a.updatesWindow == b.updatesWindow && a.performUpdate == b.performUpdate
+            && a.updateRelaunchReady == b.updateRelaunchReady
             && a.resumeAfter == b.resumeAfter && a.readyFile == b.readyFile && a.noTestBanner == b.noTestBanner
     }
 }

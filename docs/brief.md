@@ -51,3 +51,7 @@ event tap (Input Monitoring permission). Agreed 2026-10-04.
    resumed. While paused, no key presses or clicks are counted for any app; the menu bar
    icon and the popup show the paused state and when counting resumes; resuming is one
    click. The pause survives an app restart until its end time. Only the end time is saved.
+9. (Added 2026-10-09) The popup footer shows the running version or "Update available".
+   Clicking it opens App Updates with current/latest versions and a release status.
+   A requested Homebrew update shows progress, restarts into the installed update, and
+   leaves the running app available if upgrading or launching the replacement fails.

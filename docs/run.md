@@ -75,6 +75,23 @@ cask to the GitHub release, and commits the cask to the tap repository
 requirement across releases, so Input Monitoring stays approved after `brew upgrade`.
 The tap repository's README is kept here as `packaging/homebrew/README.md`.
 
+## App updates
+The popup footer shows the running version. Opening the popup checks the published Homebrew
+cask at most once an hour; it becomes "Update available" when that cask is newer. Clicking
+the version opens App Updates with Current version, Latest version and release status.
+"Check for Updates" requests a fresh check. When a newer cask exists the button reads
+"Update from Homebrew". Checks read the version line from the published tap cask at
+https://raw.githubusercontent.com/dctmfoo/homebrew-type-stats/HEAD/Casks/type-stats.rb.
+This is the exact cask the release workflow publishes, so an unshipped GitHub tag is not offered.
+
+Updating locates Homebrew at `/opt/homebrew/bin/brew` or `/usr/local/bin/brew`, refreshes its
+metadata, confirms the running bundle is the installed cask target, and upgrades only
+`dctmfoo/type-stats/type-stats` using `--no-quit`. Progress stays visible and errors leave
+TypeStats running. Once the installed bundle is at least the offered version, macOS launches
+a new instance; only a confirmed launch ends the old instance. Counts are saved before restart.
+There are no silent updates. Updates require the Homebrew-installed app and a Homebrew version
+supporting `--no-quit`; an unsupported flag is shown as an error.
+
 ## Start at login
 The popup's footer has a "Start at login" switch next to Quit. On registers TypeStats
 as a login item (`SMAppService.mainApp`), off removes it, and the switch shows the
@@ -217,7 +234,7 @@ Counts are stored locally in a SwiftData store at
 - one row per excluded app: bundle id and name.
 
 Key codes, characters, text, the time of any single press and click positions are
-never stored. Nothing leaves this Mac.
+never stored. Counts stay on this Mac; release checks send no counts or app names.
 Older stores are upgraded in place on first launch: key and click counts are kept
 unchanged, typing time starts at 0 and earlier counts have no hour. A daily goal saved by an
 earlier version is ignored (the feature is gone) and does not stop the store from opening.
@@ -257,6 +274,12 @@ earlier version is ignored (the feature is gone) and does not stop the store fro
 | `--resume-after n` | n seconds after launch, resume as a Resume click does (lets a check watch the menu bar icon change) |
 | `--dump-pause` | Apply `--pause`/`--resume`, then print `paused\|running<TAB>end time or -<TAB>menu bar symbol<TAB>status text or -` and exit. A pause whose end time has passed (by `--at`) reads as `running` |
 | `--no-test-banner` | With `--no-tap`, leave the "Key capture off (test mode)" line out of the popup, so `--snapshot` gives a clean screenshot (`scripts/readme-screenshots.sh`) |
+| `--update-version <version>` | With `--no-tap`, fake the running version for update verification |
+| `--update-cask <path>` | With `--no-tap`, read a local cask fixture instead of the published cask |
+| `--update-brew <path>` | With `--no-tap` and `--data-dir`, use this executable instead of system Homebrew |
+| `--updates-window` | With `--no-tap`, check then open App Updates; `--snapshot` renders that dialog |
+| `--perform-update` | With `--no-tap`, check then run the same update action as the button; use a fixture brew for automated checks |
+| `--update-relaunch-ready <path>` | A test relaunch writes this ready file, keeps `--no-tap` and its isolated data folder |
 | `--login-status` | Print the real login item status (`enabled`, `disabled` or `requiresApproval`), read only, and exit |
 
 Example: `open -n .build/TypeStats.app --args --data-dir "$PWD/.po/tmp/x" --no-tap --show-window --simulate-keys "com.apple.TextEdit:5" --simulate-clicks "com.apple.finder:3"`.

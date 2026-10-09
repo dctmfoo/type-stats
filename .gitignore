@@ -1,5 +1,5 @@
 .po/proof.json
-.po/tmp/
+.po/tmp
 .build/
 .swiftpm/
 *.xcuserstate

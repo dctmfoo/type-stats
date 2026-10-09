@@ -12,6 +12,8 @@ final class AppController {
     let tap: KeyTap
     let loginItem: LoginItem
     let pause: PauseControl
+    let update: AppUpdate
+    @ObservationIgnored private var updatesWindow: NSWindow?
     let testMode: Bool
     /// Show "Key capture off (test mode)" in the popup (test mode without `--no-test-banner`).
     let showsTestBanner: Bool
@@ -28,6 +30,8 @@ final class AppController {
 
     init(options: LaunchOptions, dataDir: URL) {
         self.options = options
+        update = AppUpdate(currentVersion: options.noTap ? options.updateVersion ?? Self.bundleVersion : Self.bundleVersion,
+                           service: HomebrewUpdateService(options: options))
         testMode = options.noTap
         showsTestBanner = options.noTap && !options.noTestBanner
         // Test mode never touches the real login item.
@@ -81,12 +85,14 @@ final class AppController {
         if options.showWindow { showWindow() }
         if options.measureViews { measureViews() }
         if options.simulateSelfClicks > 0 { simulateSelfClicks(options.simulateSelfClicks) }
-        if let url = options.snapshot { writeSnapshot(to: url) }
-        if let url = options.readyFile {
-            do { try Data("ready\n".utf8).write(to: url) } catch {
-                FileHandle.standardError.write(Data("TypeStats: ready file write failed: \(error)\n".utf8))
+        if options.noTap && (options.updateCask != nil || options.updatesWindow || options.performUpdate) {
+            Task { @MainActor in
+                await update.check()
+                if options.updatesWindow { showUpdates() }
+                if options.performUpdate { await update.update() }
+                finishStartupEvidence()
             }
-        }
+        } else { finishStartupEvidence() }
         if let seconds = options.resumeAfter {
             Task { @MainActor [weak self] in
                 try? await Task.sleep(for: .seconds(seconds))
@@ -110,6 +116,34 @@ final class AppController {
                 if !self.options.noTap && !self.tap.isRunning { self.tap.start() }
             }
         }
+    }
+
+    static var bundleVersion: String {
+        Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "Unknown"
+    }
+
+    private func finishStartupEvidence() {
+        if let url = options.snapshot { writeSnapshot(to: url) }
+        if let url = options.readyFile {
+            do { try Data("ready\n".utf8).write(to: url) }
+            catch {
+                FileHandle.standardError.write(Data("TypeStats: ready file write failed: \(error)\n".utf8))
+            }
+        }
+    }
+
+    func showUpdates() {
+        if updatesWindow == nil {
+            let window = NSWindow(contentViewController: NSHostingController(rootView: AppUpdatesView(update: update)))
+            window.title = "App Updates"
+            window.styleMask = [.titled, .closable]
+            window.isReleasedWhenClosed = false
+            window.center()
+            updatesWindow = window
+        }
+        updatesWindow?.makeKeyAndOrderFront(nil)
+        NSApp.activate(ignoringOtherApps: true)
+        if !options.noTap { Task { await update.checkIfNeeded() } }
     }
 
     /// Test seam (`--share-copy`, `--share-save`): the Share actions without the menu, for
@@ -313,7 +347,10 @@ final class AppController {
 
     /// Renders the same PopupView the menu bar shows into a PNG.
     private func writeSnapshot(to url: URL) {
-        let view = PopupView(controller: self, period: options.view, showExcluded: options.excludedPage)
+        let view = Group {
+            if options.updatesWindow { AppUpdatesView(update: update) }
+            else { PopupView(controller: self, period: options.view, showExcluded: options.excludedPage) }
+        }
             .background(Color(nsColor: .windowBackgroundColor))
             .environment(\.colorScheme, .light)
         let renderer = ImageRenderer(content: view)

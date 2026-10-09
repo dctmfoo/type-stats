@@ -13,7 +13,7 @@ W=${TYPESTATS_POPUP_ARTIFACTS:-$(mktemp -d "$ROOT/.po/tmp/popup-real.XXXXXX")}
 mkdir -p "$W"
 DATA=$(mktemp -d "$ROOT/.po/tmp/popup-real-data.XXXXXX")
 # Tall screen: the shared popup gives the detail area 580 points; a collapsed area is a few points.
-FLOOR=${TYPESTATS_POPUP_DETAIL_FLOOR:-400}
+FLOOR=400
 SHORT=700
 cleanup() { pkill -TERM -f "$DATA" 2>/dev/null || true; sleep 0.5; find "$DATA" -mindepth 1 -delete; rmdir "$DATA"; }
 trap cleanup EXIT HUP INT TERM

@@ -3,7 +3,6 @@
 //   item <pid>          centre of the status item, as "x y" (click it to open the popup)
 //   window <pid>        "window id<TAB>x<TAB>y<TAB>w<TAB>h" of the open popup, from the window server
 //   measure <pid>       "window" and "detail" in one read: id, x, y, w, h and detail height, tab separated
-//   detail <pid>        height of the popup's detail area (charts and Top apps; it scrolls on a short screen) in points
 //   period <pid> <0-2>  press the Today, 7 days or 30 days button
 // Exits 1 when what it looks for is not there (popup closed, no status item).
 import ApplicationServices
@@ -12,7 +11,7 @@ import Foundation
 
 let args = CommandLine.arguments
 guard args.count >= 3, let pid = pid_t(args[2]) else {
-    FileHandle.standardError.write(Data("usage: popup-probe.swift item|window|detail|period <pid> [n]\n".utf8))
+    FileHandle.standardError.write(Data("usage: popup-probe.swift item|window|measure|period <pid> [n]\n".utf8))
     exit(2)
 }
 let app = AXUIElementCreateApplication(pid)
@@ -70,10 +69,6 @@ case "measure":
     guard let w = popupWindow() else { fail("popup window is not open") }
     guard let detail = detailHeight(in: w.element) else { fail("no detail area in the popup") }
     print(line([w.id] + [w.frame.minX, w.frame.minY, w.frame.width, w.frame.height].map { Int($0.rounded()) } + [detail]))
-case "detail":
-    guard let w = popupWindow() else { fail("popup window is not open") }
-    guard let detail = detailHeight(in: w.element) else { fail("no detail area in the popup") }
-    print(detail)
 case "period":
     guard args.count > 3, let index = Int(args[3]),
           let window = (attribute(app, kAXWindowsAttribute) as? [AXUIElement])?.first else { fail("popup window is not open") }

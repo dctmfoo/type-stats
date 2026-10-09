@@ -2,18 +2,15 @@
 
 ## What changed
 
-The 7-day view has a seven-date by 24-hour typing heatmap beneath By day. The shared
-7-day image uses the same counts, shade mapping, dated peak line and coverage note.
-Zero is grey. Positive counts use four blue quartiles of the busiest shown cell.
-Future hours today have outlines, and keys saved without an hour remain unplaced.
+Added weekly typing hours to the 7-day popup and shared image. See
+[Views](../docs/run.md#views) for the display contract and [Share](../docs/run.md#share)
+for export behavior.
 Today's live counts are included once; pending counts from an ended day are included
 once before and after a flush. Past hourly reads are cached without changing storage.
-The 7-day popup grows by the heatmap and keeps the full Top apps list, capped at the visible
-screen height. The heatmap has light and dark palettes. Other periods keep their layout.
 
 ## Checks
 
-Four focused unit tests cover dimensions, multiple apps, live counts, rollover without
+Focused unit tests cover dimensions, multiple apps, live counts, rollover without
 an event, flush/reopen parity, legacy coverage, empty weeks, tied peaks and shade edges.
 A deliberately broken render mapping failed the full project check at heatmap-probe.
 The new render check compares all 168 cell centres in both the popup and shared image,
@@ -24,7 +21,7 @@ Final full-check and exact-file receipts are retained in the assigned task data 
 ## Methods used
 
 - review: traced saved, live and rollover aggregation before checking real render output.
-- boundary-discipline: the core snapshot decides future cells, coverage and peak ties; both views share it and the same palette.
+- boundary-discipline: the core snapshot decides future cells, coverage and peak ties; both views share it and choose the palette for their appearance.
 
 ## Friction
 
@@ -42,10 +39,9 @@ outside the worktree through ignored .po/tmp and proof.json symlinks.
 
 ## Limits
 
-The existing store combines repeated daylight-saving hours into one local-hour bucket.
-Historical hourly gaps are reported, never inferred. The native menu-bar opening and
-physical event tap were not driven; all renders and scrolling used isolated seeded data
-with --no-tap. ImageRenderer popup PNGs omit the scrolling Top apps rows; live captures show them.
+The native menu-bar opening and physical event tap were not driven; all renders and
+scrolling used isolated seeded data with --no-tap. ImageRenderer popup PNGs omit the
+scrolling Top apps rows; live captures show them.
 
 ## Review
 

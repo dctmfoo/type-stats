@@ -2,6 +2,17 @@ import AppKit
 import SwiftUI
 import TypeStatsCore
 
+/// Disposable login-service failure used only by --no-tap --popup-banners.
+@MainActor
+private final class PopupBannerLoginItemService: LoginItemService {
+    var status: LoginItemStatus { .requiresApproval }
+    private struct Failure: Error, CustomStringConvertible {
+        var description: String { "Fixture login registration failed. Try again after allowing TypeStats in Login Items." }
+    }
+    func register() throws { throw Failure() }
+    func unregister() throws { throw Failure() }
+}
+
 /// Owns the store, counter, event tap and test seams for the running app.
 @MainActor
 @Observable
@@ -35,7 +46,13 @@ final class AppController {
         testMode = options.noTap
         showsTestBanner = options.noTap && !options.noTestBanner
         // Test mode never touches the real login item.
-        loginItem = LoginItem(service: options.noTap ? InMemoryLoginItemService() : MainLoginItemService())
+        let loginService: any LoginItemService
+        if options.noTap {
+            if options.popupBanners { loginService = PopupBannerLoginItemService() }
+            else { loginService = InMemoryLoginItemService() }
+        } else { loginService = MainLoginItemService() }
+        loginItem = LoginItem(service: loginService)
+        if options.noTap && options.popupBanners { loginItem.set(true) }
         let at = options.at
         do {
             counter = try KeyCounter(store: try CountStore(directory: dataDir), now: { at ?? Date() })
@@ -295,6 +312,10 @@ final class AppController {
         options.screenHeight.map { CGFloat($0) } ?? NSScreen.main?.visibleFrame.height ?? .greatestFiniteMagnitude
     }
 
+    var showsPermissionBanner: Bool {
+        testMode ? options.popupBanners : !tap.permissionGranted || !tap.isRunning
+    }
+
     /// Popup contents in a normal, capturable window (`--show-window`).
     private func showWindow() {
         let w = window ?? makeWindow()
@@ -304,12 +325,14 @@ final class AppController {
     }
 
     private func makeWindow() -> NSWindow {
-        let w = NSWindow(
-            contentRect: NSRect(x: 0, y: 0, width: PopupView.width, height: 560),
-            styleMask: [.titled, .closable], backing: .buffered, defer: false)
+        // Match the menu bar popup's preferred sizing instead of proposing a fixed
+        // 560 pt test window, which forces the flexible weekly list to its minimum.
+        let host = NSHostingController(rootView: PopupView(controller: self, period: options.view, showExcluded: options.excludedPage))
+        host.sizingOptions = [.preferredContentSize]
+        let w = NSWindow(contentViewController: host)
+        w.styleMask = [.titled, .closable]
         w.title = "TypeStats"
         w.isReleasedWhenClosed = false
-        w.contentView = NSHostingView(rootView: PopupView(controller: self, period: options.view, showExcluded: options.excludedPage))
         w.center()
         return w
     }

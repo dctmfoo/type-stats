@@ -94,6 +94,9 @@ public struct LaunchOptions: Equatable, Sendable {
     /// `--no-test-banner`: in test mode, leave the "Key capture off (test mode)" line out of the
     /// popup (for screenshots).
     public var noTestBanner = false
+    /// With --no-tap, show permission, login approval and login error banners without
+    /// requesting permissions or registering a system login item.
+    public var popupBanners = false
     /// Update verification seams. Overrides and actions are accepted only with --no-tap.
     public var updateVersion: String?
     public var updateCask: URL?
@@ -138,6 +141,7 @@ public struct LaunchOptions: Equatable, Sendable {
             case "--hold-flush": o.holdFlush = true
             case "--snapshot": o.snapshot = URL(fileURLWithPath: try value("--snapshot"))
             case "--dark-snapshot": o.darkSnapshot = true
+            case "--popup-banners": o.popupBanners = true
             case "--simulate-keys": o.simulateKeys = try parseKeys(try value("--simulate-keys"))
             case "--simulate-clicks": o.simulateClicks = try parseKeys(try value("--simulate-clicks"))
             case "--simulate-self-clicks":

@@ -147,16 +147,19 @@ The popup opens on "Today" and has "Today | 7 days | 30 days" at the top.
   grey; positive counts use four blue shades at up to 25%, 50%, 75% and 100% of the
   busiest shown hour. Even one key has a blue shade. Outlined cells mean today's future
   hours, labelled "Not yet". The current hour includes typing so far. The peak line
-  names the date and hour, or says how many hours tie. "Based on X of Y keys" appears
-  when some keys have no hour. Repeated daylight-saving hours share their stored bucket.
+  names the first busiest date and hour, and gives the number of tied hours when there
+  is more than one. "Based on X of Y keys" appears when some keys have no hour.
+  Repeated daylight-saving hours share their stored bucket.
 
 The popup is 360 points wide in every view. Today and 30 days share one fixed height
 (room for the chart, the one-line "no hour" note and up to 8 app rows), so the menu bar
 window never resizes or moves while counts tick. Fewer apps leave blank space under the
 list. The 7-day view is taller: it adds the heatmap under By day and keeps the full Top
-apps height. When that would not fit the visible screen height, only the Top apps list
-shrinks, to a scrolling viewport of at least one row. The heatmap follows the system
-appearance (light greys and blues that darken toward the peak, or dark greys and blues
+apps height. The complete popup, including permission, login approval and error banners
+and the Share/Quit footer, is capped at the visible screen height with an 8-point margin.
+When it would not fit, only the Top apps list shrinks, to a scrolling viewport of at
+least one row. The heatmap follows the system appearance (light greys and blues that
+darken toward the peak, or dark greys and blues
 that brighten); the shared image is always dark. Layout changes are not animated.
 
 ## Share
@@ -164,8 +167,8 @@ The popup footer has a Share button next to Quit. Its menu works on the period b
 viewed (Today, 7 days or 30 days):
 - Copy image: card A (big numbers, chart, top 3 apps, TypeStats footer) as a PNG on the
   clipboard (a TIFF too, for apps that only read that). The card is 1200x630 points
-  drawn at 2x, so 2400x1260 pixels. The 7-day card also includes the same hourly heatmap
-  below its chart and top apps, using the same counts, colours, peak and coverage note.
+  drawn at 2x, so 2400x1260 pixels. The 7-day card includes the [hourly heatmap](#views)
+  below its chart and top apps.
 - Copy text: one line, e.g. "Today: 7,120 keys · 665 clicks · 58 wpm. Top: Xcode 3,840 ·
   Mail 1,215 · Chrome 960. via TypeStats" ("Last 7 days:" / "Last 30 days:" for the
   others). Numbers always use commas. With fewer than 3 apps it lists what exists; with no
@@ -262,6 +265,7 @@ earlier version is ignored (the feature is gone) and does not stop the store fro
 | `--hold-flush` | Keep simulated presses unsaved until quit (proves quit saves them) |
 | `--show-window` | Also show the popup contents in a normal window |
 | `--dark-snapshot` | With `--no-tap`, render snapshots and test windows in dark appearance; normal launches ignore it |
+| `--popup-banners` | With `--no-tap`, show the real permission banner plus login approval and a wrapped fixture login error, without requesting permission or changing macOS login items; normal launches ignore it |
 | `--snapshot <png>` | Render the popup view to a PNG after launch, or App Updates when `--updates-window` is set |
 | `--simulate-typing "bundleId:keys:seconds,..."` | Feed timed key presses through the same pipeline: each segment spreads `keys` presses evenly over `seconds` (event timestamps, ending now); segments are separated by a 60 s idle pause. `A:300:60` gives about 60 wpm; segments under 10 seconds do not qualify |
 | `--at yyyy-MM-ddTHH:mm` | Freeze the app's clock at this local time: simulated events land on that day and hour, and "today" (popup and dumps) is that day |
@@ -302,9 +306,10 @@ For automated update verification, pass both `--data-dir <scratch folder>` and
 Example: `open -n .build/TypeStats.app --args --data-dir "$PWD/.po/tmp/x" --no-tap --show-window --simulate-keys "com.apple.TextEdit:5" --simulate-clicks "com.apple.finder:3"`.
 History example: `.build/TypeStats.app/Contents/MacOS/TypeStats --data-dir "$PWD/.po/tmp/x" --no-tap --at 2026-10-01T14:00 --simulate-typing "com.apple.TextEdit:300:60"`,
 then `... --data-dir "$PWD/.po/tmp/x" --at 2026-10-04T18:00 --dump-history 7`.
-The popup's expected pixel size (width x height at 2x) is one constant, `scripts/popup-size.txt`,
-read by `scripts/share-check.sh` and `scripts/share-prototype-check.sh`; change it there when the
-popup layout changes.
+The uncapped Today/30-day popup's expected pixel size with the test banner (width x height
+at 2x) is `scripts/popup-size.txt`, read by `scripts/share-check.sh` and
+`scripts/share-prototype-check.sh`. `scripts/heatmap-check.sh` derives the uncapped 7-day
+height from that baseline and checks the capped layouts separately.
 `kill -TERM <pid>` quits the app normally (counts are saved).
 
 ## Smoke

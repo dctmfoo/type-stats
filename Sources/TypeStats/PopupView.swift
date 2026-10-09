@@ -318,12 +318,12 @@ struct PopupView: View {
     }
 
     @ViewBuilder private var statusBanner: some View {
-        if controller.testMode {
+        if controller.testMode && !controller.showsPermissionBanner {
             if controller.showsTestBanner {
                 Label("Key capture off (test mode)", systemImage: "testtube.2")
                     .font(.caption).foregroundStyle(.secondary)
             }
-        } else if !controller.tap.permissionGranted || !controller.tap.isRunning {
+        } else if controller.showsPermissionBanner {
             VStack(alignment: .leading, spacing: 6) {
                 Label("Permission needed", systemImage: "exclamationmark.triangle.fill")
                     .font(.subheadline.weight(.semibold)).foregroundStyle(.orange)

@@ -99,6 +99,8 @@ launch() {
   attempt=1
   while :; do
     rm -f "$SMOKE/ready"
+    # An unset OPEN_FLAGS must contribute no argument; -g is used for background launch.
+    # shellcheck disable=SC2086
     open ${OPEN_FLAGS:-} -n "$APP" --args --data-dir "$DATA" --no-tap --ready-file "$SMOKE/ready" "$@"
     i=0
     until [ -n "$(app_pid || true)" ]; do
@@ -191,6 +193,8 @@ hits = [str(p) for p in root.rglob('*') if p.is_file() and any(n in p.read_bytes
 print('\n'.join(hits))
 sys.exit(1 if hits else 0)
 PY
+# This only displays generated store filenames; it never parses the listing.
+# shellcheck disable=SC2012
 echo "PASS no typed text in store ($(ls "$DATA" | tr '\n' ' '))"
 
 # 5. History, hours and typing speed, in their own data dir with fixed dates (--at), so

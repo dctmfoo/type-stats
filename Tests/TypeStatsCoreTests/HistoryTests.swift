@@ -58,14 +58,18 @@ final class TypingSpeedTests: XCTestCase {
     func testPipelineTimesKeysFromEventTimestamps() throws {
         let counter = try KeyCounter(store: CountStore(directory: makeTestDirectory()))
         let pipeline = KeyPressPipeline(counter: counter, frontmostApp: { terminal })
-        let base = EventClock.nowNanos() - 120_000_000_000
+        let base = EventClock.nowNanos()
         for i in 0..<300 {
             let e = CGEvent(keyboardEventSource: nil, virtualKey: 0, keyDown: true)!
+            e.flags = []
             e.timestamp = base + UInt64(i) * 200_000_000  // every 0.2 s
             pipeline.handle(type: .keyDown, event: e)
         }
         // Events without a timestamp (0) count but never add typing time.
-        pipeline.handle(type: .keyDown, event: CGEvent(keyboardEventSource: nil, virtualKey: 0, keyDown: true)!)
+        let untimed = CGEvent(keyboardEventSource: nil, virtualKey: 0, keyDown: true)!
+        untimed.flags = []
+        untimed.timestamp = 0
+        pipeline.handle(type: .keyDown, event: untimed)
         XCTAssertEqual(counter.total, 301)
         XCTAssertEqual(counter.wpm ?? 0, 12.0 * 300 / 59.8, accuracy: 0.001)
     }

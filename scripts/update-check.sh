@@ -41,7 +41,8 @@ run available --update-version 0.0.0 --updates-window
 grep -q 'new version is available' "$W/available.txt" || fail 'no update status'
 grep -q 'Update from Homebrew' "$W/available.txt" || fail 'wrong update action'
 run footer-current --update-version 0.1.0
-grep -q 'Version 0.1.0' "$W/footer-current.txt" || fail 'footer version missing'
+# Vision can read the leading zero as a capital O in the taller shared popup.
+grep -Eq 'Version [0O]\.1\.0' "$W/footer-current.txt" || fail 'footer version missing'
 run footer-available --update-version 0.0.0
 grep -q 'Update available' "$W/footer-available.txt" || fail 'footer indicator missing'
 [ "$(sips -g pixelHeight "$W/footer-current.png" | awk '/pixelHeight/ {print $2}')" = \

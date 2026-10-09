@@ -42,7 +42,7 @@ public struct LaunchOptions: Equatable, Sendable {
     /// each app with no hour, as counts saved before hourly tracking look (today's view then
     /// shows the "no hour" note).
     public var seedNoHour: [(bundleID: String, count: Int)] = []
-    /// `--screen-height <points>`: the visible screen height the 7-day popup is capped to,
+    /// `--screen-height <points>`: the visible screen height the shared popup is capped to,
     /// instead of the real screen's, so a check gets the same layout on any display.
     public var screenHeight: Double?
     /// `--measure-views`: open the popup in a window that follows its content size (as the

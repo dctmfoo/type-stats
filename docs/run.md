@@ -151,16 +151,18 @@ The popup opens on "Today" and has "Today | 7 days | 30 days" at the top.
   is more than one. "Based on X of Y keys" appears when some keys have no hour.
   Repeated daylight-saving hours share their stored bucket.
 
-The popup is 360 points wide in every view. Today and 30 days share one fixed height
-(room for the chart, the one-line "no hour" note and up to 8 app rows), so the menu bar
-window never resizes or moves while counts tick. Fewer apps leave blank space under the
-list. The 7-day view is taller: it adds the heatmap under By day and keeps the full Top
-apps height. The complete popup, including permission, login approval and error banners
-and the Share/Quit footer, is capped at the visible screen height with an 8-point margin.
-When it would not fit, only the Top apps list shrinks, to a scrolling viewport of at
-least one row. The heatmap follows the system appearance (light greys and blues that
-darken toward the peak, or dark greys and blues
-that brighten); the shared image is always dark. Layout changes are not animated.
+The popup is 360 points wide and shares one height across Today, 7 days and 30 days.
+The picker, headline numbers and footer stay in place when switching periods or counting.
+A shared 580-point detail area fits the weekly chart, heatmap and up to 8 app rows.
+Today and 30 days use the heatmap's room for a taller chart. Fewer apps give more room to
+the chart in every period rather than leaving blank rows beneath the list.
+The complete popup, including permission, login approval and error banners and the
+Share/Quit footer, is capped at the visible screen height with an 8-point margin.
+On smaller screens the same detail area becomes scrollable in every period; the picker,
+headline numbers and footer stay outside it and never shrink. Selecting a period starts
+its scroll area at the top. The heatmap follows the system appearance (light greys and
+blues that darken toward the peak, or dark greys and blues that brighten); the shared
+image is always dark. Period switches do not animate the window or layout.
 
 ## Share
 The popup footer has a Share button next to Quit. Its menu works on the period being
@@ -271,8 +273,8 @@ earlier version is ignored (the feature is gone) and does not stop the store fro
 | `--at yyyy-MM-ddTHH:mm` | Freeze the app's clock at this local time: simulated events land on that day and hour, and "today" (popup and dumps) is that day |
 | `--view today\|week\|month` | Open the popup (and `--snapshot`) on that period |
 | `--seed-nohour "bundleId:n,..."` | Before launch, add n keys and n clicks to today for each app with no hour (as counts from before hourly tracking look), so Today shows its "no hour" note |
-| `--screen-height <points>` | Use this as the visible screen height when capping the 7-day popup, instead of the real screen's, so snapshots and `--measure-views` have the same layout on any display |
-| `--measure-views` | Open the popup in a borderless window that follows its content size (as the menu bar window does), switch through Today, 7 days, 30 days and Today again while counts arrive, print `step<TAB>fitting w<TAB>h<TAB>window x<TAB>y<TAB>w<TAB>h` after each, and exit. The Today and 30 days rows must all have the same numbers; the 7 days rows are taller by the heatmap |
+| `--screen-height <points>` | Use this as the visible screen height when capping the shared popup, instead of the real screen's, so snapshots and `--measure-views` have the same layout on any display |
+| `--measure-views` | Open the popup in a borderless window that follows its content size (as the menu bar window does), exercise every directed pair of periods while counts arrive and app rows cross the eight-row limit, print `step<TAB>fitting w<TAB>h<TAB>window x<TAB>y<TAB>w<TAB>h` at all 13 steps, and exit. Every row must have identical size and window frame numbers, including on screen-capped layouts |
 | `--share-copy image\|text --pasteboard <name>` | After simulating, copy the card or the line for `--view` to the NAMED pasteboard (never the general one; refused without `--pasteboard`) and exit |
 | `--share-save <path>` | After simulating, write the 2400x1260 card for `--view` to that path (no dialog) and exit |
 | `--pasteboard-read <name> [--pasteboard-png <path>]` | Print what a named pasteboard holds (`text`, `png`, `tiff` with pixel size) and release it, optionally saving the PNG; exit |
@@ -306,10 +308,11 @@ For automated update verification, pass both `--data-dir <scratch folder>` and
 Example: `open -n .build/TypeStats.app --args --data-dir "$PWD/.po/tmp/x" --no-tap --show-window --simulate-keys "com.apple.TextEdit:5" --simulate-clicks "com.apple.finder:3"`.
 History example: `.build/TypeStats.app/Contents/MacOS/TypeStats --data-dir "$PWD/.po/tmp/x" --no-tap --at 2026-10-01T14:00 --simulate-typing "com.apple.TextEdit:300:60"`,
 then `... --data-dir "$PWD/.po/tmp/x" --at 2026-10-04T18:00 --dump-history 7`.
-The uncapped Today/30-day popup's expected pixel size with the test banner (width x height
-at 2x) is `scripts/popup-size.txt`, read by `scripts/share-check.sh` and
-`scripts/share-prototype-check.sh`. `scripts/heatmap-check.sh` derives the uncapped 7-day
-height from that baseline and checks the capped layouts separately.
+The uncapped popup's expected pixel size in every period with the test banner (width x
+height at 2x) is `scripts/popup-size.txt`, read by `scripts/share-check.sh`,
+`scripts/share-prototype-check.sh` and `scripts/heatmap-check.sh`.
+The steady-popup smoke and heatmap checks require identical snapshot sizes and identical
+live window frames across every period, including screen-capped layouts.
 `kill -TERM <pid>` quits the app normally (counts are saved).
 
 ## Smoke

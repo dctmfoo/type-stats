@@ -111,6 +111,22 @@ public final class CountStore {
         return hours
     }
 
+    /// Per-app identities and counts for each hour, projected from the existing rows.
+    /// A missing daily name falls back to the stored bundle identity, never a guessed service.
+    public func appHours(day: String) throws -> [Int: [String: HourlyAppCount]] {
+        let names = try counts(day: day).reduce(into: [String: String]()) { $0[$1.bundleID] = $1.name }
+        let fetch = FetchDescriptor<AppHourCount>(predicate: #Predicate { $0.day == day })
+        var hours: [Int: [String: HourlyAppCount]] = [:]
+        for row in try context.fetch(fetch) {
+            let app = AppIdentity(bundleID: row.bundleID, name: names[row.bundleID] ?? row.bundleID)
+            var value = hours[row.hour]?[row.bundleID] ?? HourlyAppCount(app: app, keys: 0)
+            value.keys += row.count
+            value.clicks += row.clicks
+            hours[row.hour, default: [:]][row.bundleID] = value
+        }
+        return hours
+    }
+
     private static func appCount(_ row: AppDayCount) -> AppCount {
         AppCount(bundleID: row.bundleID, name: row.appName, count: row.count, clicks: row.clicks,
                  burstCount: row.burstCount, activeSeconds: row.activeSeconds)

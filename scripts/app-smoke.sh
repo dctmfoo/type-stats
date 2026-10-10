@@ -27,7 +27,7 @@ DATA="$SMOKE/data"
 A=local.typestats.smoke.alpha
 B=local.typestats.smoke.beta
 C=local.typestats.smoke.gamma   # clicks only
-SELF=local.typestats.TypeStats
+SELF=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$APP/Contents/Info.plist")
 MARKER=TSMARKERqwxzv   # 13 characters, typed into alpha via --simulate-text
 
 fail() { echo "FAIL app-smoke: $*"; stop_app || true; exit 1; }

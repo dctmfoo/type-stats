@@ -57,7 +57,7 @@ for view in today week month; do
   popup "popup-$view-banners" "$view" --popup-banners --screen-height 875
   popup "popup-$view-banners-full" "$view" --popup-banners --screen-height 5000
 done
-python3 scripts/heatmap-probe.py dark:"$W/popup-week-dark.png" light:"$W/popup-week-light.png" dark:"$W/share-week.png" || fail 'grid or shade mismatch'
+python3 scripts/heatmap-probe.py dark:"$W/popup-week-dark.png" light:"$W/popup-week-light.png" light:"$W/share-week.png" || fail 'grid or shade mismatch'
 swift scripts/ocr.swift "$W/share-week.png" > "$W/share.txt"
 grep -q 'Based on 704 of 804 keys' "$W/share.txt" || fail 'coverage note missing or wrong'
 grep -q 'Peak Tue 29, 4-5 pm' "$W/share.txt" || fail 'peak label missing or wrong'
@@ -134,4 +134,4 @@ DATA="$FIXTURES/empty"; mkdir -p "$DATA"
 "$BIN" --no-tap --data-dir "$DATA" --at 2026-10-05T10:30 --view week --share-save "$W/empty-week.png"
 swift scripts/ocr.swift "$W/empty-week.png" > "$W/empty-week.txt"
 grep -q 'No hourly typing yet' "$W/empty-week.txt" || fail 'empty week invents a peak'
-echo "PASS heatmap: 7x24 cells in light and dark, identical popup sizes and live frames across periods and screen caps, fixed footer, four blue steps, zero and future cells, pending count, coverage and peak; renders in $W"
+echo "PASS heatmap: 7x24 cells in light and dark, identical popup sizes and live frames across periods and screen caps, fixed footer, four total-activity steps, zero and future cells, pending count, coverage and peak; renders in $W"

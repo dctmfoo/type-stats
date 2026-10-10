@@ -17,12 +17,66 @@ public struct WeeklyActivity: Equatable, Sendable {
         public let day: String
         public let label: String
         public let cells: [Cell]
+        public let appHours: [[HourlyAppCount]]
         public var id: String { day }
+
+        public func detail(at hour: Int) -> HourDetail {
+            HourDetail(label: label, hour: hour, cell: cells[hour], apps: appHours[hour])
+        }
     }
 
     public struct Peak: Equatable, Sendable {
         public let day: String
         public let hour: Int
+    }
+
+    public struct HourDetail: Equatable, Sendable {
+        public let label: String
+        public let hour: Int
+        public let cell: Cell
+        public let leaders: [HourlyAppCount]
+        public let completeAppBreakdown: Bool
+
+        init(label: String, hour: Int, cell: Cell, apps: [HourlyAppCount]) {
+            self.label = label
+            self.hour = hour
+            self.cell = cell
+            completeAppBreakdown = cell != .future && apps.reduce(0) { $0 + $1.keys } == cell.keys
+                && apps.allSatisfy { !$0.app.bundleID.isEmpty && $0.keys >= 0 }
+                && Set(apps.map(\.app.bundleID)).count == apps.count
+            let maximum = apps.map(\.keys).max() ?? 0
+            leaders = completeAppBreakdown && maximum > 0
+                ? apps.filter { $0.keys == maximum }.sorted { $0.app.bundleID < $1.app.bundleID } : []
+        }
+
+        public var leadingShare: Double? {
+            guard cell.keys > 0, let leader = leaders.first else { return nil }
+            return Double(leader.keys) / Double(cell.keys)
+        }
+
+        public var text: String {
+            let heading = "\(label), \(WeeklyActivity.hourRange(hour))"
+            guard case .count(let keys) = cell else { return heading + "\nNot yet counted" }
+            let total = "\(heading)\nTotal \(ShareSummary.number(keys)) keys"
+            guard keys > 0 else { return total + "\nNo leading app" }
+            guard let share = leadingShare, let leader = leaders.first else { return total + "\nApp breakdown unavailable" }
+            let names = leaders.map { $0.app.name.isEmpty ? $0.app.bundleID : $0.app.name }.joined(separator: ", ")
+            let percent = (share * 100).formatted(.number.locale(Locale(identifier: "en_US")).precision(.fractionLength(1)))
+            let title = leaders.count == 1 ? "Leading app" : "Tied leaders"
+            let each = leaders.count == 1 ? "" : " each"
+            return total + "\n\(title): \(names) · \(percent)%\(each)\n\(ShareSummary.number(leader.keys)) of \(ShareSummary.number(keys)) keys\(each)"
+        }
+    }
+
+    /// Every named leading identity, including ties and apps outside the ranked list.
+    public var leadingApps: [AppIdentity] {
+        var apps: [String: AppIdentity] = [:]
+        for row in rows {
+            for hour in 0..<24 {
+                for leader in row.detail(at: hour).leaders { apps[leader.app.bundleID] = leader.app }
+            }
+        }
+        return apps.values.sorted { $0.bundleID < $1.bundleID }
     }
 
     public let rows: [Row]
@@ -32,7 +86,7 @@ public struct WeeklyActivity: Equatable, Sendable {
     public let peaks: [Peak]
 
     public init(dayKeys: [String], hours: [String: [Int: HourCount]], totalKeys: Int,
-                now: Date, calendar: Calendar) {
+                now: Date, calendar: Calendar, appHours: [String: [Int: [String: HourlyAppCount]]] = [:]) {
         let today = DayKey.string(for: now, calendar: calendar)
         let currentHour = calendar.component(.hour, from: now)
         let parser = DateFormatter()
@@ -49,6 +103,9 @@ public struct WeeklyActivity: Equatable, Sendable {
             Row(day: day, label: parser.date(from: day).map { label.string(from: $0) } ?? day,
                 cells: (0..<24).map { hour in
                     day == today && hour > currentHour ? .future : .count(hours[day]?[hour]?.keys ?? 0)
+                }, appHours: (0..<24).map { hour in
+                    day == today && hour > currentHour ? []
+                        : Array((appHours[day]?[hour] ?? [:]).values).sorted { $0.app.bundleID < $1.app.bundleID }
                 })
         }
         self.totalKeys = totalKeys

@@ -11,6 +11,8 @@ public final class KeyCounter {
     public private(set) var todayCounts: [String: AppCount] = [:]
     /// Today's keys and clicks per local hour (stored plus not yet flushed).
     public private(set) var todayHours: [Int: HourCount] = [:]
+    /// Today's per-app hours, already including saved and pending keys exactly once.
+    public private(set) var todayAppHours: [Int: [String: HourlyAppCount]] = [:]
     public private(set) var day: String
     /// Apps excluded from counting, by name. Their presses and clicks are dropped; their
     /// earlier counts stay.
@@ -27,7 +29,7 @@ public final class KeyCounter {
     /// history on every redraw, which is every key press while it shows 7 or 30 days, and past
     /// days only change when a flush writes to one, so they are read from the store once.
     @ObservationIgnored private var pastRows: [[String]: [(day: String, app: AppCount)]] = [:]
-    @ObservationIgnored private var pastHours: [String: [Int: HourCount]] = [:]
+    @ObservationIgnored private var pastAppHours: [String: [Int: [String: HourlyAppCount]]] = [:]
     /// Store reads made for past days (tests check the cache with it).
     @ObservationIgnored private(set) var pastRowFetches = 0
     @ObservationIgnored private let store: CountStore
@@ -117,6 +119,9 @@ public final class KeyCounter {
         todayCounts[app.bundleID] = row
         todayHours[hour, default: HourCount(hour: hour)].keys += tally.keys
         todayHours[hour, default: HourCount(hour: hour)].clicks += tally.clicks
+        let saved = todayAppHours[hour]?[app.bundleID]
+        todayAppHours[hour, default: [:]][app.bundleID] =
+            HourlyAppCount(app: app, keys: (saved?.keys ?? 0) + tally.keys, clicks: (saved?.clicks ?? 0) + tally.clicks)
     }
 
     /// Writes pending presses and clicks to the store. They are kept if saving fails.
@@ -132,7 +137,7 @@ public final class KeyCounter {
         // Unsaved counts from a day that already ended are now saved rows of a past day.
         if pending.keys.contains(where: { $0.day != day }) {
             pastRows = [:]
-            pastHours = [:]
+            pastAppHours = [:]
         }
         pending.removeAll()
         pendingNames.removeAll()
@@ -190,16 +195,26 @@ public final class KeyCounter {
         let date = now()
         let history = try history(days: 7)
         let keys = history.days.map(\.day)
-        var hours: [String: [Int: HourCount]] = [:]
+        var appHours: [String: [Int: [String: HourlyAppCount]]] = [:]
         for past in keys where past != day {
-            if pastHours[past] == nil { pastHours[past] = try store.hours(day: past) }
-            hours[past] = pastHours[past]
+            if pastAppHours[past] == nil { pastAppHours[past] = try store.appHours(day: past) }
+            appHours[past] = pastAppHours[past]
         }
         for (bucket, tally) in pending where bucket.day != day && keys.contains(bucket.day) {
-            hours[bucket.day, default: [:]][bucket.hour, default: HourCount(hour: bucket.hour)].keys += tally.keys
+            let app = AppIdentity(bundleID: bucket.bundleID, name: pendingNames[bucket] ?? bucket.bundleID)
+            let saved = appHours[bucket.day]?[bucket.hour]?[bucket.bundleID]
+            appHours[bucket.day, default: [:]][bucket.hour, default: [:]][bucket.bundleID] =
+                HourlyAppCount(app: app, keys: (saved?.keys ?? 0) + tally.keys, clicks: (saved?.clicks ?? 0) + tally.clicks)
         }
-        hours[day] = todayHours
-        return WeeklyActivity(dayKeys: keys, hours: hours, totalKeys: history.totalKeys, now: date, calendar: calendar)
+        appHours[day] = todayAppHours
+        let hours = appHours.mapValues { dayHours in
+            Dictionary(uniqueKeysWithValues: dayHours.map { hour, apps in
+                (hour, HourCount(hour: hour, keys: apps.values.reduce(0) { $0 + $1.keys },
+                                 clicks: apps.values.reduce(0) { $0 + $1.clicks }))
+            })
+        }
+        return WeeklyActivity(dayKeys: keys, hours: hours, totalKeys: history.totalKeys, now: date,
+                              calendar: calendar, appHours: appHours)
     }
 
     /// Starts a fresh "today" when the local date changes.
@@ -209,9 +224,10 @@ public final class KeyCounter {
         endTypingStretch()
         day = current
         pastRows = [:]
-        pastHours = [:]
+        pastAppHours = [:]
         todayCounts = [:]
         todayHours = [:]
+        todayAppHours = [:]
         try? reloadToday()
     }
 
@@ -219,6 +235,7 @@ public final class KeyCounter {
         var rows: [String: AppCount] = [:]
         for row in try store.counts(day: day) { rows[row.bundleID] = row }
         var hours = try store.hours(day: day)
+        var appHours = try store.appHours(day: day)
         // Presses and clicks for today that were not flushed yet still count.
         for (bucket, tally) in pending where bucket.day == day {
             let app = AppIdentity(bundleID: bucket.bundleID, name: pendingNames[bucket] ?? bucket.bundleID)
@@ -226,9 +243,13 @@ public final class KeyCounter {
                 .add(Self.appCount(tally, app: app))
             hours[bucket.hour, default: HourCount(hour: bucket.hour)].keys += tally.keys
             hours[bucket.hour, default: HourCount(hour: bucket.hour)].clicks += tally.clicks
+            let saved = appHours[bucket.hour]?[bucket.bundleID]
+            appHours[bucket.hour, default: [:]][bucket.bundleID] =
+                HourlyAppCount(app: app, keys: (saved?.keys ?? 0) + tally.keys, clicks: (saved?.clicks ?? 0) + tally.clicks)
         }
         todayCounts = rows
         todayHours = hours
+        todayAppHours = appHours
     }
 
     private static func appCount(_ tally: Tally, app: AppIdentity) -> AppCount {

@@ -44,12 +44,12 @@ extension ShareSummary {
 }
 
 enum SharePalette {
-    static let background = LinearGradient(
-        colors: [Color(red: 0.10, green: 0.10, blue: 0.13), Color(red: 0.05, green: 0.05, blue: 0.07)],
-        startPoint: .topLeading, endPoint: .bottomTrailing)
-    static let keys = Color(red: 0.25, green: 0.55, blue: 1.0)
-    static let primary = Color.white
-    static let secondary = Color.white.opacity(0.58)
+    // Export appearance is stable porcelain; the live popup follows system appearance.
+    static let background = Color(red: 0.95, green: 0.96, blue: 0.97)
+    static let keys = PorcelainTheme.accent(.light)
+    static let magnitude = PorcelainTheme.magnitude(.light)
+    static let primary = Color(red: 0.16, green: 0.15, blue: 0.21)
+    static let secondary = Color(red: 0.40, green: 0.39, blue: 0.46)
 }
 
 /// The three big numbers in one row (variant A). Starts at `size` and steps down until the
@@ -124,7 +124,7 @@ private struct ActivityChart: View {
         .chartYScale(domain: 0...max(10, sample.buckets.map(\.keys).max() ?? 0))
         .chartXAxis {
             AxisMarks(values: labelIndices) { value in
-                AxisGridLine(stroke: StrokeStyle(lineWidth: 1)).foregroundStyle(.white.opacity(0.1))
+                AxisGridLine(stroke: StrokeStyle(lineWidth: 1)).foregroundStyle(.secondary.opacity(0.15))
                 AxisValueLabel {
                     if let i = value.as(Int.self) {
                         Text(sample.isDaily ? sample.buckets[i].label : PopupHour.label(i))
@@ -181,9 +181,10 @@ struct ShareCardA: View {
                     }
                     ForEach(sample.topThree) { app in
                         HStack {
+                            AppTag(bundleID: app.bundleID, name: app.name, size: 24)
                             Text(app.name).lineLimit(1)
                             Spacer(minLength: 12)
-                            Text(ShareSummary.number(app.keys)).monospacedDigit().foregroundStyle(SharePalette.keys)
+                            Text(ShareSummary.number(app.keys)).monospacedDigit().foregroundStyle(SharePalette.primary)
                         }
                         .font(.system(size: 28, weight: .semibold, design: .rounded))
                         .foregroundStyle(SharePalette.primary)
@@ -197,11 +198,11 @@ struct ShareCardA: View {
         .padding(48)
         .frame(width: Self.size.width, height: Self.size.height)
         .background(SharePalette.background)
-        .environment(\.colorScheme, .dark)
+        .environment(\.colorScheme, .light)
     }
 
     private func weeklyCard(_ activity: WeeklyActivity) -> some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: 8) {
             HStack(alignment: .firstTextBaseline) {
                 Text(sample.title).font(.system(size: 34, weight: .bold, design: .rounded))
                 Spacer()
@@ -219,13 +220,14 @@ struct ShareCardA: View {
                     ForEach(sample.topThree) { app in
                         VStack(alignment: .leading, spacing: 4) {
                             HStack {
+                                AppTag(bundleID: app.bundleID, name: app.name, size: 20)
                                 Text(app.name).lineLimit(1)
                                 Spacer()
-                                Text(ShareSummary.number(app.keys)).monospacedDigit().foregroundStyle(SharePalette.keys)
+                                Text(ShareSummary.number(app.keys)).monospacedDigit().foregroundStyle(SharePalette.primary)
                             }
                             GeometryReader { geometry in
-                                Capsule().fill(.white.opacity(0.08))
-                                Capsule().fill(SharePalette.keys)
+                                Capsule().fill(.secondary.opacity(0.14))
+                                Capsule().fill(SharePalette.magnitude)
                                     .frame(width: geometry.size.width * Double(app.keys) / Double(max(1, sample.topThree.first?.keys ?? 1)))
                             }
                             .frame(height: 7)
@@ -237,14 +239,14 @@ struct ShareCardA: View {
                 .frame(width: 360)
             }
             .frame(height: 130)
-            WeeklyActivityView(activity: activity, scale: 1.2)
+            WeeklyActivityView(activity: activity, scale: 1.1, interactive: false)
             HStack { Spacer(); Footer(size: 20) }
         }
         .foregroundStyle(SharePalette.primary)
         .padding(36)
         .frame(width: Self.size.width, height: Self.size.height)
         .background(SharePalette.background)
-        .environment(\.colorScheme, .dark)
+        .environment(\.colorScheme, .light)
     }
 }
 
@@ -331,8 +333,9 @@ enum ShareRender {
     @MainActor static func png<V: View>(_ view: V, scale: CGFloat = 1) -> Data? {
         let renderer = ImageRenderer(content: view)
         renderer.scale = scale
+        if #available(macOS 26.0, *) { renderer.allowedDynamicRange = .standard }
         guard let image = renderer.cgImage else { return nil }
-        return NSBitmapImageRep(cgImage: image).representation(using: .png, properties: [:])
+        return StandardBitmap.make(image)?.representation(using: .png, properties: [:])
     }
 
     /// Writes every variant into `dir` and returns the file names written.

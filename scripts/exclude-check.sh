@@ -19,7 +19,7 @@ BIN="$APP/Contents/MacOS/TypeStats"
 W="$ROOT/.po/tmp/exclude-apps/check"
 A=local.typestats.excl.vault   # the excluded app (a password manager, say)
 B=local.typestats.excl.editor
-SELF=local.typestats.TypeStats
+SELF=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$APP/Contents/Info.plist")
 TAB=$(printf '\t')
 
 fail() { echo "FAIL exclude: $*"; stop_app || true; exit 1; }

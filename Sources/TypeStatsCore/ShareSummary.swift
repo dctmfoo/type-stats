@@ -7,11 +7,13 @@ public struct ShareSummary: Equatable, Sendable {
     public struct AppRow: Identifiable, Equatable, Sendable {
         public let name: String
         public let keys: Int
-        public var id: String { name }
+        public let bundleID: String
+        public var id: String { bundleID.isEmpty ? name : bundleID }
 
-        public init(name: String, keys: Int) {
+        public init(name: String, keys: Int, bundleID: String = "") {
             self.name = name
             self.keys = keys
+            self.bundleID = bundleID
         }
     }
 
@@ -103,7 +105,7 @@ public struct ShareSummary: Equatable, Sendable {
             f.dateFormat = pattern
             return f.string(from: date)
         }
-        func rows(_ apps: [AppCount]) -> [AppRow] { apps.prefix(8).map { AppRow(name: $0.name, keys: $0.count) } }
+        func rows(_ apps: [AppCount]) -> [AppRow] { apps.prefix(8).map { AppRow(name: $0.name, keys: $0.count, bundleID: $0.bundleID) } }
 
         if period == .today {
             let hours = (0..<24).map { counter.todayHours[$0] ?? HourCount(hour: $0) }

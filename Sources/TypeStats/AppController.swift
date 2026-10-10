@@ -388,8 +388,9 @@ final class AppController {
             .environment(\.colorScheme, options.noTap && options.darkSnapshot ? .dark : .light)
         let renderer = ImageRenderer(content: view)
         renderer.scale = 2
+        if #available(macOS 26.0, *) { renderer.allowedDynamicRange = .standard }
         guard let image = renderer.cgImage,
-              let png = NSBitmapImageRep(cgImage: image).representation(using: .png, properties: [:])
+              let png = StandardBitmap.make(image)?.representation(using: .png, properties: [:])
         else {
             FileHandle.standardError.write(Data("TypeStats: snapshot failed\n".utf8))
             return

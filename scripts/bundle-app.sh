@@ -12,6 +12,11 @@ cd "$(dirname "$0")/.."
 CONFIG="${1:-release}"
 VERSION="${TYPESTATS_VERSION:-0.1.0}"
 BUILD="${TYPESTATS_BUILD:-1}"
+# Separate identity for isolated development proof; releases keep the default identity.
+BUNDLE_ID="${TYPESTATS_BUNDLE_ID:-local.typestats.TypeStats}"
+case "$BUNDLE_ID" in
+  ''|*[!A-Za-z0-9.-]*) echo "Invalid TYPESTATS_BUNDLE_ID" >&2; exit 1 ;;
+esac
 ARCH_FLAGS=""
 for arch in ${TYPESTATS_ARCHS:-}; do ARCH_FLAGS="$ARCH_FLAGS --arch $arch"; done
 
@@ -31,7 +36,7 @@ cat > "$APP/Contents/Info.plist" <<PLIST
 <dict>
     <key>CFBundleDevelopmentRegion</key><string>en</string>
     <key>CFBundleExecutable</key><string>TypeStats</string>
-    <key>CFBundleIdentifier</key><string>local.typestats.TypeStats</string>
+    <key>CFBundleIdentifier</key><string>$BUNDLE_ID</string>
     <key>CFBundleInfoDictionaryVersion</key><string>6.0</string>
     <key>CFBundleName</key><string>TypeStats</string>
     <key>CFBundleDisplayName</key><string>TypeStats</string>
@@ -56,7 +61,7 @@ if [ -z "$IDENTITY" ]; then
     | sed 's/^ *[0-9]*) //' | sort -k2 | awk 'NR==1 { print $1 }')
 fi
 if [ -n "$IDENTITY" ] && [ "$IDENTITY" != "-" ] \
-  && codesign --force --sign "$IDENTITY" --identifier local.typestats.TypeStats "$APP" 2>/dev/null; then
+  && codesign --force --sign "$IDENTITY" --identifier "$BUNDLE_ID" "$APP" 2>/dev/null; then
   echo "Signed with identity $IDENTITY (stable across rebuilds)"
 else
   if [ "$IDENTITY" = "-" ]; then
@@ -65,6 +70,6 @@ else
     echo "No usable Apple Development signing identity: signing ad hoc, so macOS will ask for Input Monitoring again after each rebuild."
     echo "Install an Apple Development certificate, or set TYPESTATS_SIGN_IDENTITY to one."
   fi
-  codesign --force --sign - --identifier local.typestats.TypeStats "$APP"
+  codesign --force --sign - --identifier "$BUNDLE_ID" "$APP"
 fi
 echo "Built $APP ($CONFIG, version $VERSION build $BUILD)"

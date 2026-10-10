@@ -2,7 +2,7 @@ import Foundation
 
 /// What the share card and share text show for one period (Today, 7 days or 30 days):
 /// totals, the chart buckets and the top apps. Built from the same counts the popup
-/// shows. Holds counts only, never key codes, text or click positions.
+/// shows. Holds aggregate counts and app identities, never key codes, typed text or click positions.
 public struct ShareSummary: Equatable, Sendable {
     public struct AppRow: Identifiable, Equatable, Sendable {
         public let name: String

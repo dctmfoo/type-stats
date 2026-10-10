@@ -39,6 +39,8 @@ stop_app() {
   done
 }
 launch() {
+  # Optional launch flags intentionally expand to separate arguments, or none when unset.
+  # shellcheck disable=SC2086
   open ${OPEN_FLAGS:-} -n "$APP" --args --data-dir "$DATA" --no-tap "$@"
   i=0
   until [ -n "$(app_pid || true)" ]; do

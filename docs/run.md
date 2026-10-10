@@ -182,17 +182,17 @@ headline numbers and footer stay outside it and never shrink. Selecting a period
 its scroll area at the top. Porcelain surfaces and text follow system appearance.
 Heatmap colours darken toward the peak in light mode and brighten in dark mode;
 Increase Contrast strengthens the ramp/borders, and Differentiate Without Color adds
-family markers. Every cell has a non-colour accessibility label. The shared image is
-always light porcelain with the same app tags, hourly colour mapping and named legend.
-Period switches do not animate the window or layout.
+family markers. Every cell has a non-colour accessibility label.
+Period switches do not animate the window or layout. See [Share](#share) for image appearance.
 
 ## Share
 The popup footer has a Share button next to Quit. Its menu works on the period being
 viewed (Today, 7 days or 30 days):
-- Copy image: card A (big numbers, chart, top 3 apps, TypeStats footer) as a PNG on the
-  clipboard (a TIFF too, for apps that only read that). The card is 1200x630 points
-  drawn at 2x, so 2400x1260 pixels. The 7-day card includes the [hourly heatmap](#views)
-  below its chart and top apps.
+- Copy image: a light Porcelain card with big numbers, a chart, top 3 apps with their
+  [icons and colour cues](#views), and a TypeStats footer, as a PNG on the clipboard
+  (a TIFF too, for apps that only read that). The card is 1200x630 points drawn at 2x,
+  so 2400x1260 pixels. The 7-day card includes the [hourly heatmap](#views) and its
+  named legend below the chart and top apps.
 - Copy text: one line, e.g. "Today: 7,120 keys · 665 clicks · 58 wpm. Top: Xcode 3,840 ·
   Mail 1,215 · Chrome 960. via TypeStats" ("Last 7 days:" / "Last 30 days:" for the
   others). Numbers always use commas. With fewer than 3 apps it lists what exists; with no
@@ -201,7 +201,7 @@ viewed (Today, 7 days or 30 days):
 - Save image...: a save dialog in Downloads named `TypeStats-Today-2026-10-05.png`
   (`TypeStats-7-days-...`, `TypeStats-30-days-...`), PNG only.
 The button briefly says "Image copied" / "Text copied" after a copy. Nothing is posted
-anywhere; the card and line hold counts and app names only.
+anywhere. Neither format contains typed text, key codes or click positions.
 
 ## Excluded apps
 Click "Excluded apps" (next to "Top apps" in the popup) to open the Excluded apps page; "Back"

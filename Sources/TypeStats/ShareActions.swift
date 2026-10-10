@@ -17,8 +17,7 @@ enum ShareActions {
     static func render(_ summary: ShareSummary) -> (png: Data, tiff: Data, pixelWidth: Int, pixelHeight: Int)? {
         let renderer = ImageRenderer(content: ShareCardA(sample: summary))
         renderer.scale = ShareRender.shareScale
-        guard let image = renderer.cgImage else { return nil }
-        let rep = NSBitmapImageRep(cgImage: image)
+        guard let image = renderer.cgImage, let rep = StandardBitmap.make(image) else { return nil }
         guard let png = rep.representation(using: .png, properties: [:]),
               let tiff = rep.tiffRepresentation(using: .lzw, factor: 0)
         else { return nil }

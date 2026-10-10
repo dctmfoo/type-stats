@@ -19,12 +19,17 @@ sh scripts/exclude-check.sh    # excluded-apps check (needs the bundle above)
 sh scripts/pause-check.sh      # pause counting check (needs the bundle above)
 sh scripts/heatmap-check.sh    # weekly cell/shade render check (needs the bundle above)
 sh scripts/popup-real-check.sh # opens the REAL menu bar popup, every period (moves the mouse; needs the bundle above)
-sh .po/check.sh                # full project check (the full real-app check)
+sh .po/check.sh                # full project check (separate development identity, isolated data)
 sh scripts/install-app.sh      # build, quit any running copy, install to ~/Applications and open it
 sh scripts/readme-screenshots.sh   # render docs/images/ from made-up sample data
 sh scripts/package-release.sh 0.2.0  # release zip and Homebrew cask (see Releases and Homebrew)
 ```
 `sh scripts/bundle-app.sh debug` builds a debug bundle instead.
+`TYPESTATS_BUNDLE_ID=local.typestats.TypeStats.check sh scripts/bundle-app.sh` gives a
+separate development identity. The full project check uses that identity by default,
+never installs it, and quits its test copies by PID/data directory.
+`sh scripts/app-colors-check.sh` requires this separate-identity bundle; it verifies a
+named illustrative app-hour fixture, static export legend, and real-popup hover/focus.
 
 ## Everyday use: run the installed copy
 For source builds, run `sh scripts/install-app.sh` once and after each source update.
@@ -147,13 +152,23 @@ The popup opens on "Today" and has "Today | 7 days | 30 days" at the top.
 - 7 days / 30 days: totals for the period (today included, so 7 days is today and the
   6 days before), keys (bars) per day, and the top apps over the
   period. Days from before this version appear normally; only their hours are missing.
-- 7 days also shows "When you typed", seven dated rows by 24 local hours. Zero keys are
-  grey; positive counts use four blue shades at up to 25%, 50%, 75% and 100% of the
-  busiest shown hour. Even one key has a blue shade. Outlined cells mean today's future
-  hours, labelled "Not yet". The current hour includes typing so far. The peak line
-  names the first busiest date and hour, and gives the number of tied hours when there
-  is more than one. "Based on X of Y keys" appears when some keys have no hour.
-  Repeated daylight-saving hours share their stored bucket.
+- Top apps show original macOS bundle icons beside a separate bundle-ID colour cue
+  and neutral magnitude bars. Artwork is never recoloured. A neutral system app symbol
+  replaces unavailable or ambiguous artwork, rather than a guessed service logo.
+  Both bundle identity and public declared product name must match. Terminal/browser
+  rows use their host icon. The same app keeps its colour across rankings and periods;
+  unknown apps use neutral cues. Names remain essential because apps can share a family.
+- 7 days also shows "When you typed", seven dated rows by 24 local hours. Hue names
+  that hour's leading app; four equal-lightness strength bins represent **all** keys in
+  the hour, at up to 25%, 50%, 75% and 100% of the busiest shown hour. A named legend
+  pairs colours with apps. Even one key has a positive shade. Zero is grey; outlined
+  cells are today's future hours, labelled "Not yet". The current hour includes typing
+  so far. Hover, or one Tab into the grid and arrow keys, shows date/hour, total keys, leading app and its share
+  of the hourly total. A leading app need not have a majority. Exact ties name each
+  tied leader and use a neutral cell with "=". Terminal/browser activity stays with its host app, never an inferred service.
+  The peak line names the first busiest date and hour and counts any tied peak hours.
+  "Based on X of Y keys" appears when some keys have no hour. Repeated daylight-saving
+  hours share their stored bucket.
 
 The popup is 360 points wide and shares one height across Today, 7 days and 30 days.
 The picker, headline numbers and footer stay in place when switching periods or counting.
@@ -164,17 +179,20 @@ The complete popup, including permission, login approval and error banners and t
 Share/Quit footer, is capped at the visible screen height with an 8-point margin.
 On smaller screens the same detail area becomes scrollable in every period; the picker,
 headline numbers and footer stay outside it and never shrink. Selecting a period starts
-its scroll area at the top. The heatmap follows the system appearance (light greys and
-blues that darken toward the peak, or dark greys and blues that brighten); the shared
-image is always dark. Period switches do not animate the window or layout.
+its scroll area at the top. Porcelain surfaces and text follow system appearance.
+Heatmap colours darken toward the peak in light mode and brighten in dark mode;
+Increase Contrast strengthens the ramp/borders, and Differentiate Without Color adds
+family markers. Every cell has a non-colour accessibility label.
+Period switches do not animate the window or layout. See [Share](#share) for image appearance.
 
 ## Share
 The popup footer has a Share button next to Quit. Its menu works on the period being
 viewed (Today, 7 days or 30 days):
-- Copy image: card A (big numbers, chart, top 3 apps, TypeStats footer) as a PNG on the
-  clipboard (a TIFF too, for apps that only read that). The card is 1200x630 points
-  drawn at 2x, so 2400x1260 pixels. The 7-day card includes the [hourly heatmap](#views)
-  below its chart and top apps.
+- Copy image: a light Porcelain card with big numbers, a chart, top 3 apps with their
+  [icons and colour cues](#views), and a TypeStats footer, as a PNG on the clipboard
+  (a TIFF too, for apps that only read that). The card is 1200x630 points drawn at 2x,
+  so 2400x1260 pixels. The 7-day card includes the [hourly heatmap](#views) and its
+  named legend below the chart and top apps.
 - Copy text: one line, e.g. "Today: 7,120 keys · 665 clicks · 58 wpm. Top: Xcode 3,840 ·
   Mail 1,215 · Chrome 960. via TypeStats" ("Last 7 days:" / "Last 30 days:" for the
   others). Numbers always use commas. With fewer than 3 apps it lists what exists; with no
@@ -183,7 +201,7 @@ viewed (Today, 7 days or 30 days):
 - Save image...: a save dialog in Downloads named `TypeStats-Today-2026-10-05.png`
   (`TypeStats-7-days-...`, `TypeStats-30-days-...`), PNG only.
 The button briefly says "Image copied" / "Text copied" after a copy. Nothing is posted
-anywhere; the card and line hold counts and app names only.
+anywhere. Neither format contains typed text, key codes or click positions.
 
 ## Excluded apps
 Click "Excluded apps" (next to "Top apps" in the popup) to open the Excluded apps page; "Back"
@@ -267,7 +285,7 @@ earlier version is ignored (the feature is gone) and does not stop the store fro
 | `--simulate-keys "bundleId:n,..."` | Feed n synthetic key presses per app through the same pipeline as the event tap, then save |
 | `--simulate-text "bundleId:text"` | One synthetic key press per character, carrying that character; checks prove it is not stored |
 | `--simulate-clicks "bundleId:n,..."` | Feed n synthetic clicks per app (cycling left, right, other button) through the same pipeline as the event tap, then save |
-| `--simulate-self-clicks n` | Order a TypeStats window front without activating it, then feed n clicks at its centre with no app given, so the real under-pointer lookup attributes them (expected: `local.typestats.TypeStats`) |
+| `--simulate-self-clicks n` | Order a TypeStats window front without activating it, then feed n clicks at its centre with no app given, so the real under-pointer lookup attributes them (expected: the bundle's actual identifier, normally `local.typestats.TypeStats`, or the development identifier during checks) |
 | `--hold-flush` | Keep simulated presses unsaved until quit (proves quit saves them) |
 | `--show-window` | Also show the popup contents in a normal window |
 | `--dark-snapshot` | With `--no-tap`, render snapshots and test windows in dark appearance; normal launches ignore it |

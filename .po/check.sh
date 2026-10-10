@@ -2,6 +2,8 @@
 # type-stats project check: sh .po/check.sh
 set -eu
 cd "$(dirname "$0")/.."
+# Every check copy is a development identity, never the owner's installed app identity.
+export TYPESTATS_BUNDLE_ID="${TYPESTATS_BUNDLE_ID:-local.typestats.TypeStats.check}"
 python3 .po/bin/secret-scan.py
 python3 .po/bin/freshness.py
 git diff --check
@@ -43,6 +45,8 @@ sh scripts/share-prototype-check.sh
 sh scripts/share-check.sh
 # Weekly heatmap: real hourly-store counts, shade thresholds, legacy coverage and future mask.
 sh scripts/heatmap-check.sh
+# Porcelain app identity: exact rendered fixture, legend and real-popup hover/focus.
+sh scripts/app-colors-check.sh
 # Real menu bar popup: the status item opens it, every period keeps one frame and the full detail area.
 sh scripts/popup-real-check.sh
 # Excluded apps: excluded apps are never counted, the list persists, history is kept, popup marker.

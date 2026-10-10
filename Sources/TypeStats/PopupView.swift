@@ -12,14 +12,14 @@ struct PopupView: View {
     static let topLimit = 8
     static let chartHeight: CGFloat = 110
     static let noteHeight: CGFloat = 28
-    static let appRowHeight: CGFloat = 28
+    static let appRowHeight: CGFloat = 24
     /// One content budget for every period, including the weekly heatmap and eight app rows.
     static let detailHeight: CGFloat = 580
     /// Room kept between the popup and the bottom of the visible screen.
     static let screenMargin: CGFloat = 8
     static let padding: CGFloat = 16
-    static let totalFont = Font.system(size: 28, weight: .bold, design: .rounded)
-    static let keysColor = Color.accentColor
+    @Environment(\.colorScheme) private var scheme
+    private var keysColor: Color { PorcelainTheme.accent(scheme) }
 
     init(controller: AppController, period: StatsPeriod, showExcluded: Bool = false) {
         self.controller = controller
@@ -43,6 +43,8 @@ struct PopupView: View {
                 }
             }
             .frame(width: Self.width)
+            .background(PorcelainTheme.background)
+            .tint(keysColor)
             // A period switch must not animate the layout: no size or position change at all.
             .transaction { $0.animation = nil }
             .onAppear { controller.loginItem.refresh() }
@@ -128,27 +130,30 @@ struct PopupView: View {
     }
 
     private func totals(keys: Int, clicks: Int, wpm: Double?) -> some View {
-        HStack(alignment: .firstTextBaseline, spacing: 5) {
-            Text(keys, format: .number)
-                .font(Self.totalFont).monospacedDigit()
-                .accessibilityIdentifier("totalKeys")
-            Text("keys").foregroundStyle(.secondary)
-            Text(clicks, format: .number)
-                .font(Self.totalFont).monospacedDigit()
-                .padding(.leading, 10)
-                .accessibilityIdentifier("totalClicks")
-            Text("clicks").foregroundStyle(.secondary)
-            Group {
-                if let wpm { Text(wpm, format: .number.precision(.fractionLength(0))) } else { Text("–") }
-            }
-            .font(Self.totalFont).monospacedDigit()
-            .padding(.leading, 10)
-            .accessibilityIdentifier("wpm")
-            Text("wpm").foregroundStyle(.secondary)
+        HStack(spacing: 8) {
+            stat(keys.formatted(), unit: "keys", identifier: "totalKeys")
+            Divider().frame(height: 28)
+            stat(clicks.formatted(), unit: "clicks", identifier: "totalClicks")
+            Divider().frame(height: 28)
+            stat(wpm.map { $0.formatted(.number.precision(.fractionLength(0))) } ?? "–", unit: "wpm", identifier: "wpm")
                 .help("Estimated net typing speed: characters typed minus deletions, 5 to a word, per minute of steady typing (stretches of 10 seconds or more with no gap of 2 seconds).")
         }
-        .lineLimit(1)
-        .minimumScaleFactor(0.5)
+        .padding(12)
+        .background(PorcelainTheme.surface, in: RoundedRectangle(cornerRadius: 10))
+    }
+
+    private func stat(_ value: String, unit: String, identifier: String) -> some View {
+        VStack(spacing: 4) {
+            ViewThatFits(in: .horizontal) {
+                ForEach([CGFloat(24), 20, 16, 12], id: \.self) { size in
+                    Text(value).font(.system(size: size, weight: .medium, design: .rounded))
+                        .monospacedDigit().fixedSize().accessibilityIdentifier(identifier)
+                }
+            }
+            Text(unit).font(.caption).foregroundStyle(.secondary)
+        }
+        .frame(height: 48)
+        .frame(maxWidth: .infinity)
     }
 
     // MARK: Charts
@@ -171,7 +176,7 @@ struct PopupView: View {
             Chart {
                 ForEach(hours) { h in
                     BarMark(x: .value("Hour", h.hour), y: .value("Keys", h.keys), width: .fixed(9))
-                        .foregroundStyle(Self.keysColor)
+                        .foregroundStyle(keysColor)
                 }
             }
             .chartXScale(domain: -0.5...23.5)
@@ -203,7 +208,7 @@ struct PopupView: View {
             Chart {
                 ForEach(days, id: \.total.day) { d in
                     BarMark(x: .value("Day", d.date, unit: .day), y: .value("Keys", d.total.keys), width: .ratio(0.7))
-                        .foregroundStyle(Self.keysColor)
+                        .foregroundStyle(keysColor)
                 }
             }
             .chartXAxis {
@@ -248,6 +253,12 @@ struct PopupView: View {
                         .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
+                // Give the hourly grid a following Tab target even when system keyboard navigation is off.
+                .focusable()
+                .onKeyPress(.space) {
+                    showExcluded = true
+                    return .handled
+                }
                 .accessibilityIdentifier("excludedApps")
             }
             appChart(top, empty: empty)
@@ -258,33 +269,35 @@ struct PopupView: View {
     private func appChart(_ top: [AppCount], empty: String) -> some View {
         Group {
             if top.isEmpty {
-                Text(empty)
-                    .foregroundStyle(.secondary)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                Text(empty).foregroundStyle(.secondary).frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
-                Chart(top) { row in
-                    BarMark(x: .value("Keys", row.count), y: .value("App", row.name))
-                        .foregroundStyle(Self.keysColor)
-                        .annotation(position: .trailing, alignment: .leading) {
-                            HStack(spacing: 6) {
-                                Label { Text(row.count, format: .number) } icon: { Image(systemName: "keyboard") }
-                                Label { Text(row.clicks, format: .number) } icon: { Image(systemName: "cursorarrow.click") }
-                                if row.excluded {
-                                    Text("excluded").italic()
-                                } else if let wpm = row.wpm {
-                                    Text("\(wpm, format: .number.precision(.fractionLength(0))) wpm")
+                VStack(spacing: 0) {
+                    ForEach(top) { row in
+                        VStack(spacing: 4) {
+                            HStack(spacing: 4) {
+                                AppTag(bundleID: row.bundleID, name: row.name)
+                                Text(row.name).lineLimit(1).frame(maxWidth: .infinity, alignment: .leading).help(row.name)
+                                HStack(spacing: 8) {
+                                    Label { Text(row.count, format: .number) } icon: { Image(systemName: "keyboard") }
+                                    Label { Text(row.clicks, format: .number) } icon: { Image(systemName: "cursorarrow.click") }
+                                    if row.excluded { Text("excluded").italic() }
+                                    else if let wpm = row.wpm { Text("\(wpm, format: .number.precision(.fractionLength(0))) wpm") }
                                 }
+                                .labelStyle(CompactLabelStyle()).foregroundStyle(.secondary).fixedSize()
                             }
-                            .labelStyle(CompactLabelStyle())
-                            .font(.caption).monospacedDigit().foregroundStyle(.secondary)
-                            .fixedSize()
+                            .font(.caption).monospacedDigit()
+                            GeometryReader { geometry in
+                                Capsule().fill(.quaternary)
+                                Capsule().fill(PorcelainTheme.magnitude(scheme))
+                                    .frame(width: geometry.size.width * Double(row.count) / Double(max(1, top.first?.count ?? 1)))
+                            }
+                            .frame(height: 3)
                         }
+                        .frame(height: Self.appRowHeight)
+                        .accessibilityElement(children: .combine)
+                    }
                 }
-                .chartXAxis(.hidden)
-                // Room on the right of the longest bar for its label.
-                .chartXScale(domain: 0...(Double(max(top.first?.count ?? 1, 1)) * 2.3))
-                // Rows keep their height; the chart above uses the room left by fewer apps.
-                .frame(height: CGFloat(top.count) * Self.appRowHeight + 8)
+                .frame(height: CGFloat(top.count) * Self.appRowHeight + 8, alignment: .top)
             }
         }
     }

@@ -15,11 +15,12 @@ def pixels(path):
         body = data[pos + 8:pos + 8 + length]
         if kind == b"IHDR":
             width, height, depth, colour = struct.unpack(">IIBB", body[:10])
-            assert depth == 8 and colour in (2, 6), "unsupported PNG"
+            assert depth in (8, 16) and colour in (2, 6), "unsupported PNG"
         elif kind == b"IDAT":
             compressed += body
         pos += length + 12
-    bpp = 4 if colour == 6 else 3
+    sample_bytes = depth // 8
+    bpp = (4 if colour == 6 else 3) * sample_bytes
     stride = width * bpp
     raw, previous, rows = zlib.decompress(compressed), bytearray(stride), []
     for y in range(height):
@@ -37,12 +38,20 @@ def pixels(path):
                 line[i] = (line[i] + [a, b, c][distances.index(min(distances))]) & 255
         rows.append(line)
         previous = line
-    return width, height, lambda x, y: tuple(rows[y][x * bpp:x * bpp + 3])
+    # PNG 16-bit samples are big endian. Compare high bytes on the same 8-bit scale.
+    return width, height, lambda x, y: tuple(rows[y][x * bpp + channel * sample_bytes] for channel in range(3))
+
+
+def neutral(lightness):
+    # These fixture bundle IDs are unknown apps. They use the normalized neutral ramp.
+    linear = lightness ** 3
+    value = linear * 12.92 if linear <= 0.0031308 else 1.055 * linear ** (1 / 2.4) - 0.055
+    return (round(value * 255),) * 3
 
 
 palettes = {
-    "dark": [(41, 46, 56), (38, 82, 130), (41, 117, 184), (38, 150, 224), (56, 186, 255)],
-    "light": [(219, 222, 230), (189, 217, 247), (128, 184, 237), (64, 133, 219), (20, 84, 173)],
+    "dark": list(map(neutral, [0.26, 0.40, 0.52, 0.64, 0.76])),
+    "light": list(map(neutral, [0.92, 0.84, 0.74, 0.64, 0.54])),
 }
 palette = palettes["dark"]
 

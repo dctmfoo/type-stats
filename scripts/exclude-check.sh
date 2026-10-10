@@ -19,7 +19,7 @@ BIN="$APP/Contents/MacOS/TypeStats"
 W="$ROOT/.po/tmp/exclude-apps/check"
 A=local.typestats.excl.vault   # the excluded app (a password manager, say)
 B=local.typestats.excl.editor
-SELF=local.typestats.TypeStats
+SELF=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$APP/Contents/Info.plist")
 TAB=$(printf '\t')
 
 fail() { echo "FAIL exclude: $*"; stop_app || true; exit 1; }
@@ -39,6 +39,8 @@ stop_app() {
   done
 }
 launch() {
+  # Optional launch flags intentionally expand to separate arguments, or none when unset.
+  # shellcheck disable=SC2086
   open ${OPEN_FLAGS:-} -n "$APP" --args --data-dir "$DATA" --no-tap "$@"
   i=0
   until [ -n "$(app_pid || true)" ]; do

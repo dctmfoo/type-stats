@@ -389,7 +389,7 @@ final class AppController {
         let renderer = ImageRenderer(content: view)
         renderer.scale = 2
         guard let image = renderer.cgImage,
-              let png = NSBitmapImageRep(cgImage: image).representation(using: .png, properties: [:])
+              let png = StandardBitmap.make(image)?.representation(using: .png, properties: [:])
         else {
             FileHandle.standardError.write(Data("TypeStats: snapshot failed\n".utf8))
             return

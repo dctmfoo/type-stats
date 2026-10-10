@@ -88,16 +88,14 @@ final class HourlyAppActivityTests: XCTestCase {
         XCTAssertEqual(try restarted.weeklyActivity(), live)
     }
 
-    func testTiesZeroFuturePluralityAndUnavailableBreakdownLabels() throws {
+    func testTiesZeroFutureAndPluralityLabels() throws {
         let clock = TestClock("2026-10-05 13:30")
         let day = "2026-10-05"
         let hours = [day: [9: HourCount(hour: 9, keys: 420), 10: HourCount(hour: 10, keys: 735),
-                          11: HourCount(hour: 11, keys: 100), 12: HourCount(hour: 12, keys: 100),
                           14: HourCount(hour: 14, keys: 999)]]
         let appHours = [day: [9: [a.bundleID: HourlyAppCount(app: a, keys: 210), b.bundleID: HourlyAppCount(app: b, keys: 210)],
                             10: [a.bundleID: HourlyAppCount(app: a, keys: 245), b.bundleID: HourlyAppCount(app: b, keys: 226),
                                  c.bundleID: HourlyAppCount(app: c, keys: 264)],
-                            11: [a.bundleID: HourlyAppCount(app: a, keys: 60)],
                             14: [a.bundleID: HourlyAppCount(app: a, keys: 999)]]]
         let activity = WeeklyActivity(dayKeys: [day], hours: hours, totalKeys: 2354, now: clock.date,
                                       calendar: clock.calendar, appHours: appHours)
@@ -108,17 +106,12 @@ final class HourlyAppActivityTests: XCTestCase {
         XCTAssertEqual(row.detail(at: 10).leaders.map(\.app), [c])
         XCTAssertEqual(row.detail(at: 10).leadingShare!, 264.0 / 735, accuracy: 0.00001)
         XCTAssertTrue(row.detail(at: 10).text.contains("35.9%"))
-        for h in [11, 12] {
-            XCTAssertTrue(row.detail(at: h).leaders.isEmpty)
-            XCTAssertNil(row.detail(at: h).leadingShare)
-            XCTAssertTrue(row.detail(at: h).text.contains("App breakdown unavailable"))
-        }
         XCTAssertTrue(row.detail(at: 0).text.contains("No leading app"))
         XCTAssertNil(row.detail(at: 0).leadingShare)
         XCTAssertEqual(row.cells[14], .future)
         XCTAssertTrue(row.appHours[14].isEmpty)
         XCTAssertEqual(row.detail(at: 14).text, "Mon 5, 2-3 pm\nNot yet counted")
-        XCTAssertEqual(activity.coverageText, "Based on 1,355 of 2,354 keys")
+        XCTAssertEqual(activity.coverageText, "Based on 1,155 of 2,354 keys")
     }
 
     func testOrphanHourIdentityFallsBackToBundleWithoutInventingNames() throws {

@@ -35,15 +35,13 @@ public struct WeeklyActivity: Equatable, Sendable {
         public let hour: Int
         public let cell: Cell
         public let leaders: [HourlyAppCount]
-        public let completeAppBreakdown: Bool
 
         init(label: String, hour: Int, cell: Cell, apps: [HourlyAppCount]) {
             self.label = label
             self.hour = hour
             self.cell = cell
-            completeAppBreakdown = cell != .future && apps.reduce(0) { $0 + $1.keys } == cell.keys
             let maximum = apps.map(\.keys).max() ?? 0
-            leaders = completeAppBreakdown && maximum > 0
+            leaders = maximum > 0
                 ? apps.filter { $0.keys == maximum }.sorted { $0.app.bundleID < $1.app.bundleID } : []
         }
 
@@ -56,8 +54,7 @@ public struct WeeklyActivity: Equatable, Sendable {
             let heading = "\(label), \(WeeklyActivity.hourRange(hour))"
             guard case .count(let keys) = cell else { return heading + "\nNot yet counted" }
             let total = "\(heading)\nTotal \(ShareSummary.number(keys)) keys"
-            guard keys > 0 else { return total + "\nNo leading app" }
-            guard let share = leadingShare, let leader = leaders.first else { return total + "\nApp breakdown unavailable" }
+            guard let share = leadingShare, let leader = leaders.first else { return total + "\nNo leading app" }
             let names = leaders.map { $0.app.name.isEmpty ? $0.app.bundleID : $0.app.name }.joined(separator: ", ")
             let percent = (share * 100).formatted(.number.locale(Locale(identifier: "en_US")).precision(.fractionLength(1)))
             let title = leaders.count == 1 ? "Leading app" : "Tied leaders"

@@ -165,8 +165,7 @@ The popup opens on "Today" and has "Today | 7 days | 30 days" at the top.
   cells are today's future hours, labelled "Not yet". The current hour includes typing
   so far. Hover, or one Tab into the grid and arrow keys, shows date/hour, total keys, leading app and its share
   of the hourly total. A leading app need not have a majority. Exact ties name each
-  tied leader and use a neutral cell with "="; missing app breakdowns do not invent a
-  leader. Terminal/browser activity stays with its host app, never an inferred service.
+  tied leader and use a neutral cell with "=". Terminal/browser activity stays with its host app, never an inferred service.
   The peak line names the first busiest date and hour and counts any tied peak hours.
   "Based on X of Y keys" appears when some keys have no hour. Repeated daylight-saving
   hours share their stored bucket.

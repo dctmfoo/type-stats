@@ -113,6 +113,7 @@ probe hour-detail "$pid" > "$W/focus.txt"
 grep -q 'Tied leaders: Claude, ChatGPT' "$W/focus.txt" || fail 'focus mislabels an exact tie'
 grep -q '50.0% each' "$W/focus.txt" || fail 'focus uses the wrong tied share'
 screencapture -x -l "$(probe window "$pid" | cut -f1)" "$W/native-focus.png"
+probe leave-grid "$pid" || fail 'one Tab did not leave the hourly grid'
 # Free the desktop as soon as native assertions finish; pixel analysis is noninteractive.
 cleanup
 pid=

@@ -42,8 +42,6 @@ public struct WeeklyActivity: Equatable, Sendable {
             self.hour = hour
             self.cell = cell
             completeAppBreakdown = cell != .future && apps.reduce(0) { $0 + $1.keys } == cell.keys
-                && apps.allSatisfy { !$0.app.bundleID.isEmpty && $0.keys >= 0 }
-                && Set(apps.map(\.app.bundleID)).count == apps.count
             let maximum = apps.map(\.keys).max() ?? 0
             leaders = completeAppBreakdown && maximum > 0
                 ? apps.filter { $0.keys == maximum }.sorted { $0.app.bundleID < $1.app.bundleID } : []

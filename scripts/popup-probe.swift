@@ -5,7 +5,8 @@
 //   measure <pid>       "window" and "detail" in one read: id, x, y, w, h and detail height, tab separated
 //   period <pid> <0-2>  press the Today, 7 days or 30 days button
 //   hour <pid> <id>     centre of an accessible hourly cell (for pointer-only hover)
-//   focus-hour <pid> <id> focus a cell without generating a typing event
+//   focus-hour <pid> <id> Tab into the grid, then arrow to a cell
+//   leave-grid <pid>    one Tab; fails if the grid still has focus
 //   hour-label <pid> <id> the cell's non-colour accessibility text
 //   hour-detail <pid>   the visible hover/focus text
 //   diagnostic <pid>    focused app PID and this test popup's open/frame state
@@ -120,23 +121,53 @@ case "hour", "focus-hour", "hour-label":
     } else if args[1] == "hour-label" {
         print([kAXDescriptionAttribute, kAXValueAttribute, kAXTitleAttribute].compactMap { attribute(cell, $0) as? String }.joined(separator: "\n"))
     } else {
-        // Normal supported keyboard navigation, not a mutation of an AX attribute.
-        // Custom focusable views accept Tab with macOS 14+ without changing global settings.
+        // Normal supported keyboard navigation: Tab enters the grid once, arrows move between cells.
         let expected = (attribute(cell, kAXDescriptionAttribute) as? String) ?? ""
         guard !expected.isEmpty, let initial = popupWindow() else { fail("no focus target label") }
         _ = AXUIElementPerformAction(window, kAXRaiseAction as CFString)
-        for step in 1...200 {
+        func press(_ key: CGKeyCode) {
             guard popupWindow()?.id == initial.id else { fail("popup closed during keyboard navigation") }
-            CGEvent(keyboardEventSource: nil, virtualKey: 48, keyDown: true)?.postToPid(pid)
-            CGEvent(keyboardEventSource: nil, virtualKey: 48, keyDown: false)?.postToPid(pid)
-            usleep(70_000)
-            if let detail = descendants(window).first(where: { attribute($0, kAXIdentifierAttribute) as? String == "hourDetail" }),
-               ((attribute(detail, kAXValueAttribute) as? String) ?? (attribute(detail, kAXDescriptionAttribute) as? String)) == expected {
-                FileHandle.standardError.write(Data("keyboard focus: \(step) local Tab events, unchanged window \(initial.id)\n".utf8))
-                exit(0)
-            }
+            CGEvent(keyboardEventSource: nil, virtualKey: key, keyDown: true)?.postToPid(pid)
+            CGEvent(keyboardEventSource: nil, virtualKey: key, keyDown: false)?.postToPid(pid)
+            usleep(120_000)
         }
-        fail("normal Tab navigation did not reach hour detail")
+        func detailText() -> String? {
+            guard let detail = descendants(window).first(where: { attribute($0, kAXIdentifierAttribute) as? String == "hourDetail" }) else { return nil }
+            return (attribute(detail, kAXValueAttribute) as? String) ?? (attribute(detail, kAXDescriptionAttribute) as? String)
+        }
+        let cells = descendants(window).compactMap { element -> (id: String, label: String)? in
+            guard let id = attribute(element, kAXIdentifierAttribute) as? String, id.hasPrefix("hour-"),
+                  let label = attribute(element, kAXDescriptionAttribute) as? String else { return nil }
+            return (id, label)
+        }
+        func position(_ id: String) -> (row: Int, hour: Int)? {
+            let parts = id.split(separator: "-")
+            guard parts.count == 5, let hour = Int(parts[4]) else { return nil }
+            return (Array(Set(cells.map { $0.id.split(separator: "-").dropLast().joined(separator: "-") })).sorted()
+                .firstIndex(of: parts.dropFirst().dropLast().joined(separator: "-")) ?? 0, hour)
+        }
+        var tabs = 0
+        while detailText() == nil {
+            tabs += 1
+            guard tabs <= 12 else { fail("Tab did not enter the hourly grid within 12 presses") }
+            press(48)
+        }
+        guard let target = position(args[3]),
+              let current = cells.first(where: { $0.label.split(separator: "\n").first == detailText()?.split(separator: "\n").first }),
+              let from = position(current.id) else { fail("cannot locate the focused cell") }
+        for _ in 0..<abs(target.row - from.row) { press(target.row > from.row ? 125 : 126) }
+        for _ in 0..<abs(target.hour - from.hour) { press(target.hour > from.hour ? 124 : 123) }
+        guard detailText() == expected else { fail("arrow keys did not reach the target cell") }
+        FileHandle.standardError.write(Data("keyboard focus: \(tabs) Tab then arrows, unchanged window \(initial.id)\n".utf8))
+    }
+case "leave-grid":
+    guard let initial = popupWindow() else { fail("popup window is not open") }
+    CGEvent(keyboardEventSource: nil, virtualKey: 48, keyDown: true)?.postToPid(pid)
+    CGEvent(keyboardEventSource: nil, virtualKey: 48, keyDown: false)?.postToPid(pid)
+    usleep(300_000)
+    guard popupWindow()?.id == initial.id, let window = popupWindow()?.element else { fail("popup closed on Tab") }
+    if descendants(window).contains(where: { attribute($0, kAXIdentifierAttribute) as? String == "hourDetail" }) {
+        fail("one Tab did not leave the hourly grid")
     }
 case "hour-detail":
     guard let window = popupWindow()?.element,

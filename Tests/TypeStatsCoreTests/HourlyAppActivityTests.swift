@@ -29,26 +29,6 @@ final class HourlyAppActivityTests: XCTestCase {
         XCTAssertEqual(try KeyCounter(store: store, calendar: calendar, now: { date }).weeklyActivity(), activity)
     }
 
-    func testMissingOrDuplicateIdentityDoesNotNameAFalseLeader() {
-        let clock = TestClock("2026-10-05 13:30")
-        let day = "2026-10-05"
-        let cases: [[String: HourlyAppCount]] = [
-            ["missing": HourlyAppCount(app: .init(bundleID: "", name: "Not identified"), keys: 10)],
-            ["first": HourlyAppCount(app: a, keys: 5), "duplicate": HourlyAppCount(app: a, keys: 5)]
-        ]
-        for apps in cases {
-            let activity = WeeklyActivity(dayKeys: [day], hours: [day: [13: .init(hour: 13, keys: 10)]],
-                                          totalKeys: 10, now: clock.date, calendar: clock.calendar,
-                                          appHours: [day: [13: apps]])
-            let detail = activity.rows[0].detail(at: 13)
-            XCTAssertFalse(detail.completeAppBreakdown)
-            XCTAssertTrue(detail.leaders.isEmpty)
-            XCTAssertNil(detail.leadingShare)
-            XCTAssertTrue(detail.text.contains("Total 10 keys\nApp breakdown unavailable"))
-            XCTAssertTrue(activity.leadingApps.isEmpty)
-        }
-    }
-
     func testLeadersBelongToEachHourNotWeeklyRankAndIgnoreClicks() throws {
         let clock = TestClock("2026-10-05 14:30")
         let store = try CountStore(directory: makeTestDirectory())

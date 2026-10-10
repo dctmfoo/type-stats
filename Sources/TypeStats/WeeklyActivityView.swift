@@ -10,7 +10,8 @@ struct WeeklyActivityView: View {
 
     private struct Slot: Hashable { let day: String; let hour: Int }
     @State private var hovered: Slot?
-    @FocusState private var focused: Slot?
+    @State private var cursor: Slot?
+    @FocusState private var gridFocused: Bool
     @Environment(\.colorScheme) private var scheme
     @Environment(\.colorSchemeContrast) private var contrast
     @Environment(\.accessibilityDifferentiateWithoutColor) private var differentiate
@@ -18,6 +19,23 @@ struct WeeklyActivityView: View {
     private var dark: Bool { scheme == .dark }
     private func colour(bundleID: String?, step: Int) -> Color {
         Color(AppPalette.heatmap(bundleID: bundleID, step: step, dark: dark, increasedContrast: contrast == .increased))
+    }
+
+    private var firstSlot: Slot? { activity.rows.first.map { Slot(day: $0.day, hour: 0) } }
+    private var keyboardSlot: Slot? { gridFocused ? cursor ?? firstSlot : nil }
+
+    private func move(_ key: KeyEquivalent) -> KeyPress.Result {
+        guard interactive, let slot = keyboardSlot,
+              let row = activity.rows.firstIndex(where: { $0.day == slot.day }) else { return .ignored }
+        var hour = slot.hour, index = row
+        switch key {
+        case .leftArrow: hour = max(0, hour - 1)
+        case .rightArrow: hour = min(23, hour + 1)
+        case .upArrow: index = max(0, index - 1)
+        default: index = min(activity.rows.count - 1, index + 1)
+        }
+        cursor = Slot(day: activity.rows[index].day, hour: hour)
+        return .handled
     }
 
     var body: some View {
@@ -38,8 +56,11 @@ struct WeeklyActivityView: View {
                                 .frame(maxWidth: .infinity)
                                 .frame(height: 10 * scale)
                                 .contentShape(Rectangle())
-                                .focusable(interactive)
-                                .focused($focused, equals: slot)
+                                .overlay {
+                                    if keyboardSlot == slot {
+                                        RoundedRectangle(cornerRadius: 1.5 * scale).strokeBorder(.primary, lineWidth: 1.5 * scale)
+                                    }
+                                }
                                 .onHover { inside in
                                     guard interactive else { return }
                                     if inside { hovered = slot } else if hovered == slot { hovered = nil }
@@ -51,6 +72,10 @@ struct WeeklyActivityView: View {
                     }
                 }
             }
+            .focusable(interactive)
+            .focused($gridFocused)
+            .focusEffectDisabled()
+            .onKeyPress(keys: [.leftArrow, .rightArrow, .upArrow, .downArrow]) { move($0.key) }
             HStack(spacing: 2 * scale) {
                 Color.clear.frame(width: 42 * scale, height: 10 * scale)
                 ForEach(0..<4, id: \.self) { index in
@@ -78,7 +103,7 @@ struct WeeklyActivityView: View {
         }
         .frame(height: Self.height * scale, alignment: .top)
         .overlay(alignment: .bottom) {
-            if interactive, let slot = hovered ?? focused,
+            if interactive, let slot = hovered ?? keyboardSlot,
                let row = activity.rows.first(where: { $0.day == slot.day }) {
                 Text(row.detail(at: slot.hour).text)
                     .font(.caption)
@@ -95,7 +120,7 @@ struct WeeklyActivityView: View {
             }
         }
         .zIndex(1)
-        .onChange(of: activity.rows.map(\.day)) { _, _ in hovered = nil; focused = nil }
+        .onChange(of: activity.rows.map(\.day)) { _, _ in hovered = nil; cursor = nil }
     }
 
     private func swatch(_ color: Color) -> some View {
@@ -153,7 +178,7 @@ struct WeeklyActivityView: View {
     private func legendName(_ family: AppPalette.Family, names: [String]) -> String {
         if names == ["Visual Studio Code"] { return "VS Code" }
         if let name = names.first, names.count == 1, name.count <= 12 {
-            return name == "Google Chrome" ? "Chrome" : name
+            return name
         }
         switch family {
         case .claude: return "Claude"

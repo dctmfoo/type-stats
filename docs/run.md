@@ -163,7 +163,7 @@ The popup opens on "Today" and has "Today | 7 days | 30 days" at the top.
   the hour, at up to 25%, 50%, 75% and 100% of the busiest shown hour. A named legend
   pairs colours with apps. Even one key has a positive shade. Zero is grey; outlined
   cells are today's future hours, labelled "Not yet". The current hour includes typing
-  so far. Hover or keyboard focus shows date/hour, total keys, leading app and its share
+  so far. Hover, or one Tab into the grid and arrow keys, shows date/hour, total keys, leading app and its share
   of the hourly total. A leading app need not have a majority. Exact ties name each
   tied leader and use a neutral cell with "="; missing app breakdowns do not invent a
   leader. Terminal/browser activity stays with its host app, never an inferred service.

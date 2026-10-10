@@ -6,7 +6,7 @@
 //   period <pid> <0-2>  press the Today, 7 days or 30 days button
 //   hour <pid> <id>     centre of an accessible hourly cell (for pointer-only hover)
 //   focus-hour <pid> <id> Tab into the grid, then arrow to a cell
-//   leave-grid <pid>    one Tab; fails if the grid still has focus
+//   leave-grid <pid>    Tab out, Shift-Tab back, then activate the following control
 //   hour-label <pid> <id> the cell's non-colour accessibility text
 //   hour-detail <pid>   the visible hover/focus text
 //   diagnostic <pid>    focused app PID and this test popup's open/frame state
@@ -143,7 +143,7 @@ case "hour", "focus-hour", "hour-label":
         func position(_ id: String) -> (row: Int, hour: Int)? {
             let parts = id.split(separator: "-")
             guard parts.count == 5, let hour = Int(parts[4]) else { return nil }
-            return (Array(Set(cells.map { $0.id.split(separator: "-").dropLast().joined(separator: "-") })).sorted()
+            return (Array(Set(cells.map { $0.id.split(separator: "-").dropFirst().dropLast().joined(separator: "-") })).sorted()
                 .firstIndex(of: parts.dropFirst().dropLast().joined(separator: "-")) ?? 0, hour)
         }
         var tabs = 0
@@ -162,13 +162,31 @@ case "hour", "focus-hour", "hour-label":
     }
 case "leave-grid":
     guard let initial = popupWindow() else { fail("popup window is not open") }
-    CGEvent(keyboardEventSource: nil, virtualKey: 48, keyDown: true)?.postToPid(pid)
-    CGEvent(keyboardEventSource: nil, virtualKey: 48, keyDown: false)?.postToPid(pid)
-    usleep(300_000)
-    guard popupWindow()?.id == initial.id, let window = popupWindow()?.element else { fail("popup closed on Tab") }
-    if descendants(window).contains(where: { attribute($0, kAXIdentifierAttribute) as? String == "hourDetail" }) {
-        fail("one Tab did not leave the hourly grid")
+    func press(_ key: CGKeyCode, flags: CGEventFlags = []) {
+        for down in [true, false] {
+            let event = CGEvent(keyboardEventSource: nil, virtualKey: key, keyDown: down)
+            event?.flags = flags
+            event?.postToPid(pid)
+        }
+        usleep(300_000)
+        guard popupWindow()?.id == initial.id else { fail("popup closed during Tab-exit check") }
     }
+    func hasDetail() -> Bool {
+        descendants(initial.element).contains { attribute($0, kAXIdentifierAttribute) as? String == "hourDetail" }
+    }
+    guard hasDetail() else { fail("grid must have keyboard focus with the pointer away") }
+    press(48)
+    guard !hasDetail() else { fail("one Tab did not leave the hourly grid") }
+    press(48, flags: .maskShift)
+    guard hasDetail() else { fail("one Shift-Tab did not return to the hourly grid") }
+    press(48)
+    press(124)
+    guard !hasDetail() else { fail("grid still handles arrows after Tab exit") }
+    press(49)
+    guard descendants(initial.element).contains(where: {
+        attribute($0, kAXIdentifierAttribute) as? String == "excludedBack"
+    }) else { fail("Space did not activate the following Excluded apps control") }
+    print("Tab exits to Excluded apps; Shift-Tab returns; arrows stay out; Space opens the page")
 case "hour-detail":
     guard let window = popupWindow()?.element,
           let detail = descendants(window).first(where: { attribute($0, kAXIdentifierAttribute) as? String == "hourDetail" }) else {

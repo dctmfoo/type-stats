@@ -253,6 +253,12 @@ struct PopupView: View {
                         .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
+                // Give the hourly grid a following Tab target even when system keyboard navigation is off.
+                .focusable()
+                .onKeyPress(.space) {
+                    showExcluded = true
+                    return .handled
+                }
                 .accessibilityIdentifier("excludedApps")
             }
             appChart(top, empty: empty)

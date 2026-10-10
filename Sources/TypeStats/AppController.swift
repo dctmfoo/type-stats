@@ -388,7 +388,6 @@ final class AppController {
             .environment(\.colorScheme, options.noTap && options.darkSnapshot ? .dark : .light)
         let renderer = ImageRenderer(content: view)
         renderer.scale = 2
-        if #available(macOS 26.0, *) { renderer.allowedDynamicRange = .standard }
         guard let image = renderer.cgImage,
               let png = StandardBitmap.make(image)?.representation(using: .png, properties: [:])
         else {

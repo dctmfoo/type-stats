@@ -333,7 +333,6 @@ enum ShareRender {
     @MainActor static func png<V: View>(_ view: V, scale: CGFloat = 1) -> Data? {
         let renderer = ImageRenderer(content: view)
         renderer.scale = scale
-        if #available(macOS 26.0, *) { renderer.allowedDynamicRange = .standard }
         guard let image = renderer.cgImage else { return nil }
         return StandardBitmap.make(image)?.representation(using: .png, properties: [:])
     }

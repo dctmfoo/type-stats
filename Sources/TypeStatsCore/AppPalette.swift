@@ -61,7 +61,7 @@ public enum AppPalette {
         public var tag: RGB {
             switch self {
             case .claude: RGB(hex: 0xC66B4E)
-            case .codex, .chatgpt: RGB(hex: 0x56636B)
+            case .codex, .chatgpt: RGB(hex: 0x218358)
             case .teams: RGB(hex: 0x6264A7)
             case .discord: RGB(hex: 0x5865F2)
             case .editor: RGB(hex: 0x007ACC)

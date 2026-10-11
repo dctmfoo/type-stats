@@ -16,7 +16,8 @@ sys.argv += arguments
 # Rounded sRGB samples from the approved equal-lightness fixture. No brand-opacity scale.
 hex_ramps = {
     'claude': ['e3c2b8', 'cb9f91', 'b17e6e', '975e4c'],
-    'chatgpt': ['c4ccd0', 'a3acb3', '828e95', '647179'],
+    'chatgpt': ['b5d3c1', '8db69e', '67997e', '417d5e'],
+    'terminal': ['c4ccd0', 'a3acb3', '828e95', '647179'],
     'teams': ['c5c8e5', 'a4a7ce', '8488b5', '66699c'],
     'discord': ['c2c9e5', '9fa9cf', '7f8ab6', '606b9d'],
     'neutral': ['cacaca', 'ababab', '8c8c8c', '6f6f6f'],
@@ -39,7 +40,7 @@ expected[0][9] = ('claude', 3)    # 257/525 leads, but TOTAL 525 drives intensit
 expected[1][13] = ('teams', 4)   # low-share winner, high total 735
 expected[2][9] = ('neutral', 2)  # exact 210/210 tie, total 420
 expected[3][9] = ('chatgpt', 3)
-expected[4][9] = ('chatgpt', 1)    # Ghostty shares this neutral-blue colour
+expected[4][9] = ('terminal', 1)  # Ghostty keeps the host neutral, distinct from ChatGPT
 expected[5][10] = ('neutral', 1)
 expected[5][11] = ('discord', 2)
 expected[6][12] = ('claude', 2)

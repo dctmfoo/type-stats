@@ -157,7 +157,9 @@ The popup opens on "Today" and has "Today | 7 days | 30 days" at the top.
   replaces unavailable or ambiguous artwork, rather than a guessed service logo.
   Both bundle identity and public declared product name must match. Terminal/browser
   rows use their host icon. The same app keeps its colour across rankings and periods;
-  unknown apps use neutral cues. Names remain essential because apps can share a family.
+  unknown apps use neutral cues. ChatGPT and the shared Codex bundle identity use a
+  green cue, distinct from the unchanged terminal neutral in light and dark appearance.
+  This cue does not recolour their original artwork. Names remain essential because apps can share a family.
 - 7 days also shows "When you typed", seven dated rows by 24 local hours. Hue names
   that hour's leading app; four equal-lightness strength bins represent **all** keys in
   the hour, at up to 25%, 50%, 75% and 100% of the busiest shown hour. A named legend

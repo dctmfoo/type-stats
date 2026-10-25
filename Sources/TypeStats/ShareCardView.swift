@@ -181,7 +181,7 @@ struct ShareCardA: View {
                     }
                     ForEach(sample.topThree) { app in
                         HStack {
-                            AppTag(bundleID: app.bundleID, name: app.name, size: 24)
+                            AppTag(bundleID: app.bundleID, name: app.name, size: 24, showsColourCue: false)
                             Text(app.name).lineLimit(1)
                             Spacer(minLength: 12)
                             Text(ShareSummary.number(app.keys)).monospacedDigit().foregroundStyle(SharePalette.primary)
@@ -220,7 +220,7 @@ struct ShareCardA: View {
                     ForEach(sample.topThree) { app in
                         VStack(alignment: .leading, spacing: 4) {
                             HStack {
-                                AppTag(bundleID: app.bundleID, name: app.name, size: 20)
+                                AppTag(bundleID: app.bundleID, name: app.name, size: 20, showsColourCue: false)
                                 Text(app.name).lineLimit(1)
                                 Spacer()
                                 Text(ShareSummary.number(app.keys)).monospacedDigit().foregroundStyle(SharePalette.primary)

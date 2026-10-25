@@ -24,6 +24,7 @@ struct AppTag: View {
     let bundleID: String
     let name: String
     var size: CGFloat = 16
+    var showsColourCue = true
     @Environment(\.accessibilityDifferentiateWithoutColor) private var differentiate
 
     var body: some View {
@@ -38,15 +39,17 @@ struct AppTag: View {
                 }
             }
             .frame(width: size, height: size)
-            if differentiate {
-                Text(AppPalette.family(bundleID: bundleID).marker)
-                    .font(.system(size: 7, weight: .semibold))
-                    .foregroundStyle(rgb.luminance > 0.18 ? Color.black : Color.white)
-                    .frame(width: 10, height: size * 0.75)
-                    .background(Color(rgb), in: RoundedRectangle(cornerRadius: 2))
-            } else {
-                RoundedRectangle(cornerRadius: 1.5).fill(Color(rgb))
-                    .frame(width: 3, height: size * 0.75)
+            if showsColourCue {
+                if differentiate {
+                    Text(AppPalette.family(bundleID: bundleID).marker)
+                        .font(.system(size: 7, weight: .semibold))
+                        .foregroundStyle(rgb.luminance > 0.18 ? Color.black : Color.white)
+                        .frame(width: 10, height: size * 0.75)
+                        .background(Color(rgb), in: RoundedRectangle(cornerRadius: 2))
+                } else {
+                    RoundedRectangle(cornerRadius: 1.5).fill(Color(rgb))
+                        .frame(width: 3, height: size * 0.75)
+                }
             }
         }
         .accessibilityHidden(true)

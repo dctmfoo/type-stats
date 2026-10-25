@@ -23,9 +23,10 @@ clicked. Your counts stay on your Mac.
   do not count.
 - **Today, 7 days, 30 days.** Totals, a keys-per-hour or keys-per-day chart, and the top apps
   with their keys, clicks and typing speed.
-- **App icons and colour cues.** Original desktop icons beside stable app colours,
+- **App icons and colour cues.** Original desktop icons beside stable app colours in the popup,
   neutral magnitude bars and native Porcelain surfaces in light or dark appearance.
-  Unavailable or ambiguous artwork uses a neutral fallback.
+  Unavailable or ambiguous artwork uses a neutral fallback. Share cards show icons and names
+  without the extra colour cue; the weekly heatmap has its own named legend.
 - **Weekly typing hours.** The 7-day heatmap uses the hour's leading app colour and
   total-key intensity. Hover/focus reveals names and shares; the shared image includes
   a named legend. See [how to read it](docs/run.md#views).

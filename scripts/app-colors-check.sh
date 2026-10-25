@@ -37,6 +37,10 @@ swiftc -swift-version 6 -parse-as-library -module-name TypeStatsCore -target "$(
 swiftc -parse-as-library Sources/TypeStats/AppIconStore.swift Sources/TypeStats/StandardBitmap.swift scripts/app-icon-probe.swift -o "$W/icon-probe"
 "$W/icon-probe" "$W/icons"
 "$BIN" --no-tap --data-dir "$DATA" --at 2026-10-05T14:30 --view week --share-save "$W/share-week.png"
+for view in today month; do
+  "$BIN" --no-tap --data-dir "$DATA" --at 2026-10-05T14:30 --view "$view" --share-save "$W/share-$view.png"
+done
+python3 scripts/share-app-gap-probe.py "today:$W/share-today.png" "week:$W/share-week.png" "month:$W/share-month.png"
 "$BIN" --no-tap --data-dir "$DATA" --at 2026-10-05T14:30 --view week --snapshot "$W/week-light.png" \
   --screen-height 5000 --ready-file "$W/ready" > "$W/snapshot.log" 2>&1 &
 pid=$!

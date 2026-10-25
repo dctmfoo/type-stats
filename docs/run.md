@@ -152,7 +152,7 @@ The popup opens on "Today" and has "Today | 7 days | 30 days" at the top.
 - 7 days / 30 days: totals for the period (today included, so 7 days is today and the
   6 days before), keys (bars) per day, and the top apps over the
   period. Days from before this version appear normally; only their hours are missing.
-- Top apps show original macOS bundle icons beside a separate bundle-ID colour cue
+- Popup top apps show original macOS bundle icons beside a separate bundle-ID colour cue
   and neutral magnitude bars. Artwork is never recoloured. A neutral system app symbol
   replaces unavailable or ambiguous artwork, rather than a guessed service logo.
   Both bundle identity and public declared product name must match. Terminal/browser
@@ -191,10 +191,13 @@ Period switches do not animate the window or layout. See [Share](#share) for ima
 The popup footer has a Share button next to Quit. Its menu works on the period being
 viewed (Today, 7 days or 30 days):
 - Copy image: a light Porcelain card with big numbers, a chart, top 3 apps with their
-  [icons and colour cues](#views), and a TypeStats footer, as a PNG on the clipboard
+  original icons or neutral system-symbol fallback, and a TypeStats footer, as a PNG on the clipboard
   (a TIFF too, for apps that only read that). The card is 1200x630 points drawn at 2x,
   so 2400x1260 pixels. The 7-day card includes the [hourly heatmap](#views) and its
-  named legend below the chart and top apps.
+  named legend below the chart and top apps. Share app rows have no separate colour bar
+  or lettered marker, including with Differentiate Without Color enabled. The weekly
+  heatmap keeps its named colour legend and adds matching family letters to its cells
+  and legend with that setting enabled. The popup's app colour cues are unchanged.
 - Copy text: one line, e.g. "Today: 7,120 keys · 665 clicks · 58 wpm. Top: Xcode 3,840 ·
   Mail 1,215 · Chrome 960. via TypeStats" ("Last 7 days:" / "Last 30 days:" for the
   others). Numbers always use commas. With fewer than 3 apps it lists what exists; with no

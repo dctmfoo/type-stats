@@ -152,10 +152,12 @@ The popup opens on "Today" and has "Today | 7 days | 30 days" at the top.
 - 7 days / 30 days: totals for the period (today included, so 7 days is today and the
   6 days before), keys (bars) per day, and the top apps over the
   period. Days from before this version appear normally; only their hours are missing.
-- Popup top apps show original macOS bundle icons beside a separate bundle-ID colour cue
+- Popup top apps prefer validated installed bundles’ declared icon resources beside a separate bundle-ID colour cue
   and neutral magnitude bars. Artwork is never recoloured. A neutral system app symbol
   replaces unavailable or ambiguous artwork, rather than a guessed service logo.
-  Both bundle identity and public declared product name must match. Terminal/browser
+  Both bundle identity and public declared product name must match. The shared resolver
+  prefers CFBundleIconFile artwork, including extensionless ICNS declarations, for popup
+  and share cards. Missing or undecodable resources fall back to native workspace artwork. Terminal/browser
   rows use their host icon. The same app keeps its colour across rankings and periods;
   unknown apps use neutral cues. ChatGPT and the shared Codex bundle identity use a
   green cue, distinct from the unchanged terminal neutral in light and dark appearance.

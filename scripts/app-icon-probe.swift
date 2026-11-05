@@ -11,6 +11,26 @@ struct AppIconProbe {
                     ("com.mitchellh.ghostty", "Ghostty"), ("com.google.Chrome", "Google Chrome"),
                     ("com.apple.Terminal", "Terminal"), ("local.typestats.unavailable-icon-fixture", "Unavailable app")]
         var sources: [[String: String]] = []
+        // Verify real resolver pixels against the declared resource, not just provenance.
+        for (id, name) in [("com.anthropic.claudefordesktop", "Claude"),
+                           ("com.microsoft.teams2", "Teams"), ("com.google.Chrome", "Google Chrome")] {
+            guard let url = NSWorkspace.shared.urlForApplication(withBundleIdentifier: id),
+                  let bundle = Bundle(url: url),
+                  let declaration = bundle.object(forInfoDictionaryKey: "CFBundleIconFile") as? String else { continue }
+            let file = (declaration as NSString).pathExtension.isEmpty ? declaration + ".icns" : declaration
+            guard let resource = bundle.url(forResource: file, withExtension: nil),
+                  let declared = NSImage(contentsOf: resource),
+                  let actual = AppIconStore.icon(bundleID: id, expectedName: name) else { continue }
+            func raster(_ image: NSImage) -> Data? {
+                var rect = CGRect(x: 0, y: 0, width: 64, height: 64)
+                guard let cg = image.cgImage(forProposedRect: &rect, context: nil, hints: nil),
+                      let bitmap = StandardBitmap.make(cg) else { return nil }
+                return bitmap.representation(using: .png, properties: [:])
+            }
+            guard raster(actual.image) == raster(declared) else {
+                fatalError("FAIL declared artwork pixels: " + id)
+            }
+        }
         for (id, name) in apps {
             if let icon = AppIconStore.resolve(bundleID: id, expectedName: name) {
                 guard icon.bundleID.caseInsensitiveCompare(id) == .orderedSame,
@@ -21,7 +41,7 @@ struct AppIconProbe {
                 }
                 try png.write(to: directory.appendingPathComponent(id + ".png"))
                 sources.append(["requestedID": id, "actualID": icon.bundleID, "bundleURL": icon.bundleURL.path,
-                                "source": "NSWorkspace original application icon"])
+                                "source": "validated declared bundle artwork, with native workspace fallback"])
             } else {
                 sources.append(["requestedID": id, "expectedName": name,
                                 "source": "neutral system app symbol; exact bundle/product artwork unavailable or ambiguous"])

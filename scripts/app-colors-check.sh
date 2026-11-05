@@ -36,6 +36,9 @@ swiftc -swift-version 6 -parse-as-library -module-name TypeStatsCore -target "$(
 "$W/fixture" "$DATA"
 swiftc -parse-as-library Sources/TypeStats/AppIconStore.swift Sources/TypeStats/StandardBitmap.swift scripts/app-icon-probe.swift -o "$W/icon-probe"
 "$W/icon-probe" "$W/icons"
+swiftc -parse-as-library Sources/TypeStats/AppIconStore.swift Sources/TypeStats/StandardBitmap.swift scripts/app-icon-fixture-probe.swift -o "$W/icon-fixture-probe"
+"$W/icon-fixture-probe" "$W/icon-fixtures"
+sh scripts/app-icon-export-check.sh "$W/exports"
 "$BIN" --no-tap --data-dir "$DATA" --at 2026-10-05T14:30 --view week --share-save "$W/share-week.png"
 for view in today month; do
   "$BIN" --no-tap --data-dir "$DATA" --at 2026-10-05T14:30 --view "$view" --share-save "$W/share-$view.png"
